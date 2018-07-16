@@ -15,6 +15,13 @@ Class PQSkaTpl
 
 - **class**.
 
+Константы
+---------
+
+class устанавливает следующие константы:
+
+- [`ALLOWED_ATTRS`](#ALLOWED_ATTRS) &mdash; Атрибуты, в которые можно вставлять значения
+
 Свойства
 ----------
 
@@ -26,7 +33,6 @@ class устанавливает следующие свойства:
 - [`$parentSelector`](#$parentSelector) &mdash; Селектор корня узла для вставки данных
 - [`$noDataSelector`](#$noDataSelector) &mdash; Селектор блока с сообщением об отсутствии данных
 - [`$subparentSelector`](#$subparentSelector) &mdash; Селектор для рекурсивных вставок
-- [`$allowedAttrs`](#$allowedAttrs) &mdash; Атрибуты, в которые можно вставлять значения
 
 ### `$template` <a name="template"></a>
 
@@ -87,15 +93,6 @@ CSS-класс для скрытия элементов
 - **protected** property.
 - Значение `string`.
 
-### `$allowedAttrs` <a name="allowedAttrs"></a>
-
-Атрибуты, в которые можно вставлять значения
-
-#### Сигнатура
-
-- **protected** property.
-- Значение `array`.
-
 Методы
 -------
 
@@ -119,7 +116,7 @@ CSS-класс для скрытия элементов
 
 - **public** method.
 - Может принимать следующий параметр(ы):
-    - `$settings` (`array`) &mdash; - настройки
+    - `$settings` (`array`) - настройки
 - Ничего не возвращает.
 
 ### `__construct()` <a name="__construct"></a>
@@ -130,8 +127,8 @@ CSS-класс для скрытия элементов
 
 - **public** method.
 - Может принимать следующий параметр(ы):
-    - `$tplPath` (`string`) &mdash; - имя файла шаблона
-    - `$settings` (`array`) &mdash; - настройки
+    - `$tplPath` (`string`) - имя файла шаблона
+    - `$settings` (`array`) - настройки
 - Ничего не возвращает.
 - Выбрасывает одно из следующих исключений:
     - [`avtomon\PQSkaTplException`](../avtomon/PQSkaTplException.md)
@@ -144,10 +141,10 @@ CSS-класс для скрытия элементов
 
 - **public** method.
 - Может возвращать одно из следующих значений:
-    - `avtomon\phpQueryObject`
-    - `avtomon\QueryTemplatesSource`
-    - `avtomon\QueryTemplatesParse`
-    - `avtomon\QueryTemplatesSourceQuery`
+    - `phpQueryObject`
+    - `QueryTemplatesSource`
+    - `QueryTemplatesParse`
+    - `QueryTemplatesSourceQuery`
     - `string`
 
 ### `setMultiData()` <a name="setMultiData"></a>
@@ -158,8 +155,8 @@ CSS-класс для скрытия элементов
 
 - **public** method.
 - Может принимать следующий параметр(ы):
-    - `$data` (`array`) &mdash; - данные для вставки
-    - `$parent` (`string`|`avtomon\phpQueryObject`|`avtomon\QueryTemplatesSource`|`avtomon\QueryTemplatesParse`|`avtomon\QueryTemplatesSourceQuery`) &mdash; - селектор DOM-объекта, в который нужно вставить данные
+    - `$data` (`array`) - данные для вставки
+    - `$parent` (`string`|`phpQueryObject`|`QueryTemplatesSource`|`QueryTemplatesParse`|`QueryTemplatesSourceQuery`) - селектор DOM-объекта, в который нужно вставить данные
 - Может возвращать одно из следующих значений:
     - `phpQueryObject`
     - `QueryTemplatesParse`
@@ -176,8 +173,8 @@ CSS-класс для скрытия элементов
 
 - **protected** method.
 - Может принимать следующий параметр(ы):
-    - `$labels` (`array`) &mdash; - метка
-    - `$matches` (`array`) &mdash; - массив совпадений
+    - `$labels` (`array`) - метка
+    - `$matches` (`array`) - массив совпадений
 - Возвращает `bool` value.
 
 ### `modifyElement()` <a name="modifyElement"></a>
@@ -188,9 +185,9 @@ CSS-класс для скрытия элементов
 
 - **protected** method.
 - Может принимать следующий параметр(ы):
-    - `$element` (`phpQueryObject`|`QueryTemplatesSource`|`QueryTemplatesParse`|`QueryTemplatesSourceQuery`) &mdash; - phpQuery-элемент
-    - `$key` (`string`) &mdash; - имя элемента для вставки
-    - `$value` (`string`|`null`) &mdash; - значение для вставки
+    - `$element` (`phpQueryObject`|`QueryTemplatesSource`|`QueryTemplatesParse`|`QueryTemplatesSourceQuery`) - phpQuery-элемент
+    - `$key` (`string`) - имя элемента для вставки
+    - `$value` (`string`|`null`) - значение для вставки
 - Может возвращать одно из следующих значений:
     - `phpQueryObject`
     - `QueryTemplatesSource`
@@ -206,8 +203,8 @@ CSS-класс для скрытия элементов
 
 - **public** method.
 - Может принимать следующий параметр(ы):
-    - `$data` (`array`) &mdash; - данные для вставки
-    - `$parent` (`string`|`phpQueryObject`|`QueryTemplatesSource`|`QueryTemplatesParse`|`QueryTemplatesSourceQuery`) &mdash; - DOM-объект
+    - `$data` (`array`) - данные для вставки
+    - `$parent` (`string`|`phpQueryObject`|`QueryTemplatesSource`|`QueryTemplatesParse`|`QueryTemplatesSourceQuery`) - DOM-объект
 - Может возвращать одно из следующих значений:
     - `phpQueryObject`
     - `QueryTemplatesParse`
@@ -224,8 +221,8 @@ CSS-класс для скрытия элементов
 
 - **protected** method.
 - Может принимать следующий параметр(ы):
-    - `$data` (`array`) &mdash; - данные
-    - `$parent` (`phpQueryObject`|`QueryTemplatesSource`|`QueryTemplatesParse`|`QueryTemplatesSourceQuery`) &mdash; - элемент, в который данные должны вставляться
+    - `$data` (`array`) - данные
+    - `$parent` (`phpQueryObject`|`QueryTemplatesSource`|`QueryTemplatesParse`|`QueryTemplatesSourceQuery`) - элемент, в который данные должны вставляться
 - Возвращает `bool` value.
 
 ### `isShowNoData()` <a name="isShowNoData"></a>
@@ -236,7 +233,7 @@ CSS-класс для скрытия элементов
 
 - **protected** method.
 - Может принимать следующий параметр(ы):
-    - `$data` (`array`) &mdash; - данные
-    - `$parent` (`phpQueryObject`|`QueryTemplatesSource`|`QueryTemplatesParse`|`QueryTemplatesSourceQuery`) &mdash; - элемент, в который данные должны вставляться
+    - `$data` (`array`) - данные
+    - `$parent` (`phpQueryObject`|`QueryTemplatesSource`|`QueryTemplatesParse`|`QueryTemplatesSourceQuery`) - элемент, в который данные должны вставляться
 - Возвращает `bool` value.
 

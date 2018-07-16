@@ -1,61 +1,63 @@
 PQSkaTpl
 ========
 
-Шаблонизатор для PHP.
+Template engine for PHP.
 
-Шаблонами являются HTML-документы, 
-шаблонизация основана на добавлении определенных классов в HTML-шаблоны: 
-мы вставляем классы указывающие какие данные  и куда нужно вставлять. 
-При создании объекта мы передаём конструктору путь к файлу шаблона, 
-после этого мы можем добавить определенные данные в формируемую страницу, 
-чаще всего это выборки из базы данных. 
-Данные должны быть в виде массива записей, где запись это ассоциативный массив.
-Данные можно вставлять либо в текст элементов HTML либо в какие-либо атрибуты.
+Templates are HTML documents, 
+standardization is based on adding specific classes to the HTML templates: 
+we insert classes that indicate what data and where to insert. 
+When creating an object, we pass the path to the template file to the designer, 
+after that, we can add certain data to the generated page, 
+most often these are samples from the database. 
+The data should be in the form of an array of records, where the record is an associative array.
+You can insert data either in the HTML element text or in some attributes.
 
-Например:
+For example:
 
-Имеем блок шаблона:
+Have a template block:
 
 ```
-<div class="user parent">
-    <span class="in_text_name"></span>
-    <img class="in_src_image">
-    <a class="in_href_link in_class_user_link_class">Account</a>
+<div class= "user parent">
+    <span class= "in_text_name" ></span>
+    <img class= "in_src_image">
+    <a class= "in_href_link in_class_user_link_class" >Account</a>
 </div>
 ```
 
-И данные:
+And data:
 
 ```
 $data = [
     [
-        'name' => 'Aleksandr',
-        'image' => '/img/photo.jpg',
-        'link' => '/users/12'
-        'user_link_class' => 'trash-user'
+        'name' = > 'Aleksandr',
+        'image' = > '/img/photo.jpg',
+        'link' = > '/users/12'
+        'user_link_class' = > 'trash-user'
     ]
 ];
 ```
 
-Тогда выполнив код:
+Then running the code:
 
 ```
-$page = new PQSkaTpl('/templates/main.html');
-echo (string) $page->setMultiData($data, '.user');
+$page = new PQSkaTpl ('/templates/main.html');
+echo (string) $page->setMultiData ($data, '.user');
 ```
 
-Мы получим HTML:
+We get the HTML:
 
 ```
-<div class="user">
-    <span class="in_text_name">Aleksandr</span>
-    <img class="in_src_image" src="/img/photo.jpg">
-    <a class="in_href_link in_class_user_link_class trash-user" href="/users/12">Account</a>
+<div class= "user">
+    <span class= "in_text_name" >Aleksandr</span>
+    <img class=" in_src_image"src="/img/photo.jpg">
+    <a class= "in_href_link in_class_user_link_class trash-user" href= "/users/12 " >Account</a>
 </div>
 ```
 
 
-Если данные содержат несколько записей - блок шаблона будет копирован столько раз, 
-сколько записей содержат данные. Блоки будут вставляться друг за другом.
+If the data contains multiple records, the template block will be copied as many times, 
+how many records contain data. Blocks will be inserted one after another.
 
-[Документация](docs)
+<br>
+
+[Documentation](docs_en)

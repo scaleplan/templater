@@ -23,6 +23,26 @@ class PQSkaTplException extends CustomException
 class PQSkaTpl
 {
     /**
+     * Атрибуты, в которые можно вставлять значения
+     */
+    public const ALLOWED_ATTRS = [
+        'class',
+        'text',
+        'val',
+        'value',
+        'id',
+        'src',
+        'title',
+        'href',
+        'data-object-src',
+        'data-type',
+        'data-file-type',
+        'data-form',
+        'data-src',
+        'data-object-src'
+    ];
+
+    /**
      * Шаблон/страница
      *
      * @var string|\phpQueryObject|\QueryTemplatesParse|\QueryTemplatesSource|\QueryTemplatesSourceQuery
@@ -65,28 +85,6 @@ class PQSkaTpl
     protected $subparentSelector = '.subparent';
 
     /**
-     * Атрибуты, в которые можно вставлять значения
-     *
-     * @var array
-     */
-    protected $allowedAttrs = [
-        'class',
-        'text',
-        'val',
-        'value',
-        'id',
-        'src',
-        'title',
-        'href',
-        'data-object-src',
-        'data-type',
-        'data-file-type',
-        'data-form',
-        'data-src',
-        'data-object-src'
-    ];
-
-    /**
      * Установка конфигурации объекта
      *
      * @param array $settings - настройки
@@ -121,7 +119,7 @@ class PQSkaTpl
     /**
      * Вернуть шаблон/страницу
      *
-     * @return phpQueryObject|QueryTemplatesSource|QueryTemplatesParse|QueryTemplatesSourceQuery|string
+     * @return \phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery|string
      */
     public function getTemplate()
     {
@@ -132,7 +130,7 @@ class PQSkaTpl
      * Вставить в шаблон несколько однородных записей (при этом на каждую запись создается копия DOM-объекта-родителя)
      *
      * @param array $data - данные для вставки
-     * @param string|phpQueryObject|QueryTemplatesSource|QueryTemplatesParse|QueryTemplatesSourceQuery $parent - селектор DOM-объекта, в который нужно вставить данные
+     * @param string|\phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $parent - селектор DOM-объекта, в который нужно вставить данные
      *
      * @return \phpQueryObject|\QueryTemplatesParse|\QueryTemplatesSource|\QueryTemplatesSourceQuery
      *
@@ -203,7 +201,7 @@ class PQSkaTpl
             return false;
         }
 
-        if (!preg_match_all('/in_(' . implode('|', $this->allowedAttrs) . ")_$key/i", $element->attr('class'), $matches)) {
+        if (!preg_match_all('/in_(' . implode('|', self::ALLOWED_ATTRS) . ")_$key/i", $element->attr('class'), $matches)) {
             return false;
         }
 
