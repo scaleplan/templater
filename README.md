@@ -1,7 +1,16 @@
-PQSkaTpl
-========
+# PQSkaTpl
 
 Template engine for PHP.
+
+#### Installation
+
+`
+composer reqire avtomon/pqskatpl
+`
+
+<br>
+
+#### Description
 
 Templates are HTML documents, 
 standardization is based on adding specific classes to the HTML templates: 
