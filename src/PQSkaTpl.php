@@ -39,7 +39,8 @@ class PQSkaTpl
         'data-file-type',
         'data-form',
         'data-src',
-        'data-object-src'
+        'data-object-src',
+        'data-account-id'
     ];
 
     /**
