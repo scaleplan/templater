@@ -1,26 +1,19 @@
 <?php
 
-namespace avtomon;
+namespace Scaleplan\Templater;
 
 use phpQuery;
-
-/**
- * Класс ошибок
- *
- * Class PQSkaTplException
- * @package avtomon
- */
-class PQSkaTplException extends CustomException
-{
-}
+use Scaleplan\Templater\Exceptions\DomElementNotFountException;
+use Scaleplan\Templater\Exceptions\FileNotFountException;
 
 /**
  * Шаблонизатор
  *
- * Class PQSkaTpl
- * @package avtomon
+ * Class Templater
+ *
+ * @package Scaleplan\Templater
  */
-class PQSkaTpl
+class Templater
 {
     /**
      * Атрибуты, в которые можно вставлять значения
@@ -105,12 +98,12 @@ class PQSkaTpl
      * @param string $tplPath - имя файла шаблона
      * @param array $settings - настройки
      *
-     * @throws PQSkaTplException
+     * @throws FileNotFountException
      */
     public function __construct(string $tplPath, array $settings = [])
     {
         if (!file_exists($tplPath)) {
-            throw new PQSkaTplException("Файл шаблона $tplPath не существует");
+            throw new FileNotFountException();
         }
 
         $this->template = phpQuery::newDocumentFileHTML($tplPath);
@@ -131,16 +124,16 @@ class PQSkaTpl
      * Вставить в шаблон несколько однородных записей (при этом на каждую запись создается копия DOM-объекта-родителя)
      *
      * @param array $data - данные для вставки
-     * @param string|\phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $parent - селектор DOM-объекта, в который нужно вставить данные
+     * @param string|\phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $parent
      *
      * @return \phpQueryObject|\QueryTemplatesParse|\QueryTemplatesSource|\QueryTemplatesSourceQuery
      *
-     * @throws PQSkaTplException
+     * @throws DomElementNotFountException
      */
     public function setMultiData(array $data, $parent)
     {
         if (\is_string($parent) && empty((string) ($parent = $this->template->find($parent)))) {
-            throw new PQSkaTplException('Искомый DOM-элемент не найден');
+            throw new DomElementNotFountException();
         }
 
         if (\is_array($data) && !$parent->hasClass($this->cloneClassName)) {
@@ -190,7 +183,7 @@ class PQSkaTpl
     /**
      * Заполнение элемента данными
      *
-     * @param \phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $element - phpQuery-элемент
+     * @param \phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $element
      * @param string $key - имя элемента для вставки
      * @param string $value - значение для вставки
      *
@@ -202,7 +195,8 @@ class PQSkaTpl
             return false;
         }
 
-        if (!preg_match_all('/in_(' . implode('|', self::ALLOWED_ATTRS) . ")_$key/i", $element->attr('class'), $matches)) {
+        $pattern = '/in_(' . implode('|', self::ALLOWED_ATTRS) . ")_$key/i";
+        if (!preg_match_all($pattern, $element->attr('class'), $matches)) {
             return false;
         }
 
@@ -235,16 +229,16 @@ class PQSkaTpl
      * Вставить данные в DOM-объект шаблона
      *
      * @param array $data - данные для вставки
-     * @param string|\phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $parent - DOM-объект
+     * @param string|\phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $parent
      *
      * @return \phpQueryObject|\QueryTemplatesParse|\QueryTemplatesSource|\QueryTemplatesSourceQuery
      *
-     * @throws PQSkaTplException
+     * @throws DomElementNotFountException
      */
     public function setData(array $data, &$parent)
     {
         if (\is_string($parent) && empty((string) $parent = $this->template->find($parent))) {
-            throw new PQSkaTplException('Искомый DOM-элемент не найден');
+            throw new DomElementNotFountException();
         }
 
         if (isset($data[0])) {
@@ -260,7 +254,6 @@ class PQSkaTpl
         }
 
         foreach ($data AS $key => $value) {
-            //$value = @json_decode($value, true) ?? (string) $value;
             if (\is_array($value)) {
                 $this->setMultiData($value, $parent->find(".$key{$this->subparentSelector}"));
             } else {
@@ -282,7 +275,7 @@ class PQSkaTpl
      * Если данных нет, то прячет зависимые от этих данных элементы
      *
      * @param array $data - данные
-     * @param \phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $parent - элемент, в который данные должны вставляться
+     * @param \phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $parent
      *
      * @return bool
      */
@@ -309,14 +302,18 @@ class PQSkaTpl
      * Показать блок с сообщением об отсутствии данных, если данных нет
      *
      * @param array $data - данные
-     * @param \phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $parent - элемент, в который данные должны вставляться
+     * @param \phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $parent
      *
      * @return bool
      */
     protected function isShowNoData(array &$data, &$parent): bool
     {
         if (!$data) {
-            if (!($parent = $parent->parents($this->parentSelector)) || !((string) $noDataElement = $parent->find($this->noDataSelector))) {
+            if (
+                !($parent = $parent->parents($this->parentSelector))
+                ||
+                !((string) $noDataElement = $parent->find($this->noDataSelector))
+            ) {
                 return true;
             }
 
