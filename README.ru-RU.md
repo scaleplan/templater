@@ -5,7 +5,7 @@
 #### Установка
 
 ``
-composer reqire avtomon/pqskatpl
+composer reqire scaleplan/templater
 ``
 
 <br>

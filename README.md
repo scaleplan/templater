@@ -5,7 +5,7 @@ Template engine for PHP.
 #### Installation
 
 `
-composer reqire avtomon/pqskatpl
+composer reqire scaleplan/templater
 `
 
 <br>
