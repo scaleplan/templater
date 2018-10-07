@@ -1,10 +1,6 @@
 {
-    "name": "avtomon/PQSkaTpl",
-    "description": "Yet another PHP-templater",
-    "minimum-stability": "dev",
-    "config": {
-        "process-timeout": 1800
-    },
+    "name": "scaleplan/templater",
+    "description": "PHP-templater for Scaleplan framework",
     "autoload": {
         "psr-4": {
             "avtomon\\": "src/"
