@@ -33,13 +33,13 @@ class Templater
         'data-form',
         'data-src',
         'data-object-src',
-        'data-account-id'
+        'data-account-id',
     ];
 
     /**
      * Шаблон/страница
      *
-     * @var string|\phpQueryObject|\QueryTemplatesParse|\QueryTemplatesSource|\QueryTemplatesSourceQuery
+     * @var string|\phpQueryObject
      */
     protected $template = '';
 
@@ -83,7 +83,7 @@ class Templater
      *
      * @param array $settings - настройки
      */
-    public function init(array $settings): void
+    public function init(array $settings) : void
     {
         foreach ($settings as $setting => $value) {
             if (isset($this->{$setting})) {
@@ -113,7 +113,7 @@ class Templater
     /**
      * Вернуть шаблон/страницу
      *
-     * @return \phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery|string
+     * @return \phpQueryObject|string
      */
     public function getTemplate()
     {
@@ -124,9 +124,9 @@ class Templater
      * Вставить в шаблон несколько однородных записей (при этом на каждую запись создается копия DOM-объекта-родителя)
      *
      * @param array $data - данные для вставки
-     * @param string|\phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $parent
+     * @param string|\phpQueryObject $parent
      *
-     * @return \phpQueryObject|\QueryTemplatesParse|\QueryTemplatesSource|\QueryTemplatesSourceQuery
+     * @return \phpQueryObject
      *
      * @throws DomElementNotFountException
      */
@@ -170,7 +170,7 @@ class Templater
      *
      * @return bool
      */
-    protected function isInsertable(array $labels, array &$matches): bool
+    protected function isInsertable(array $labels, array &$matches) : bool
     {
         if (array_intersect($labels, $matches)) {
             $matches = array_diff($matches, $labels);
@@ -183,11 +183,11 @@ class Templater
     /**
      * Заполнение элемента данными
      *
-     * @param \phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $element
+     * @param \phpQueryObject $element
      * @param string $key - имя элемента для вставки
      * @param string $value - значение для вставки
      *
-     * @return \phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery|bool
+     * @return \phpQueryObject|bool
      */
     protected function modifyElement(&$element, string &$key, ?string &$value)
     {
@@ -195,7 +195,7 @@ class Templater
             return false;
         }
 
-        $pattern = '/in_(' . implode('|', self::ALLOWED_ATTRS) . ")_$key/i";
+        $pattern = '/in_(' . implode('|', static::ALLOWED_ATTRS) . ")_$key/i";
         if (!preg_match_all($pattern, $element->attr('class'), $matches)) {
             return false;
         }
@@ -229,9 +229,9 @@ class Templater
      * Вставить данные в DOM-объект шаблона
      *
      * @param array $data - данные для вставки
-     * @param string|\phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $parent
+     * @param string|\phpQueryObject $parent
      *
-     * @return \phpQueryObject|\QueryTemplatesParse|\QueryTemplatesSource|\QueryTemplatesSourceQuery
+     * @return \phpQueryObject
      *
      * @throws DomElementNotFountException
      */
@@ -259,8 +259,7 @@ class Templater
             } else {
                 $this->modifyElement($parent, $key, $value);
 
-                $parent->find("*[class*=_$key]")->each(function ($element) use ($key, $value)
-                {
+                $parent->find("*[class*=_$key]")->each(function($element) use ($key, $value) {
                     $element = pq($element);
                     $this->modifyElement($element, $key, $value);
                 });
@@ -275,11 +274,11 @@ class Templater
      * Если данных нет, то прячет зависимые от этих данных элементы
      *
      * @param array $data - данные
-     * @param \phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $parent
+     * @param \phpQueryObject $parent
      *
      * @return bool
      */
-    protected function dataDependsCheck(array &$data, &$parent): bool
+    protected function dataDependsCheck(array &$data, &$parent) : bool
     {
         if ($data) {
             return true;
@@ -302,18 +301,15 @@ class Templater
      * Показать блок с сообщением об отсутствии данных, если данных нет
      *
      * @param array $data - данные
-     * @param \phpQueryObject|\QueryTemplatesSource|\QueryTemplatesParse|\QueryTemplatesSourceQuery $parent
+     * @param \phpQueryObject $parent
      *
      * @return bool
      */
-    protected function isShowNoData(array &$data, &$parent): bool
+    protected function isShowNoData(array &$data, &$parent) : bool
     {
         if (!$data) {
-            if (
-                !($parent = $parent->parents($this->parentSelector))
-                ||
-                !((string) $noDataElement = $parent->find($this->noDataSelector))
-            ) {
+            if (!($parent = $parent->parents($this->parentSelector))
+                || !((string) $noDataElement = $parent->find($this->noDataSelector))) {
                 return true;
             }
 
