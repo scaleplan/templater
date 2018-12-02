@@ -7,12 +7,12 @@
         }
     },
     "require": {
-        "JaderH/phpQuery-single": "dev-master"
+        "scaleplan/phpquery-single": "dev-master"
     },
     "repositories": [
         {
             "type": "git",
-            "url": "https://github.com/JaderH/phpQuery-single.git"
+            "url": "https://github.com/scaleplan/phpquery-single.git"
         }
     ]
 }
