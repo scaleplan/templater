@@ -39,7 +39,7 @@ class Templater
     /**
      * Шаблон/страница
      *
-     * @var string|\phpQueryObject
+     * @var \phpQueryObject
      */
     protected $template = '';
 
@@ -100,7 +100,7 @@ class Templater
      *
      * @throws FileNotFountException
      */
-    public function __construct(string $tplPath, array $settings = [])
+    public function __construct(\string $tplPath, array $settings = [])
     {
         if (!file_exists($tplPath)) {
             throw new FileNotFountException();
@@ -113,9 +113,9 @@ class Templater
     /**
      * Вернуть шаблон/страницу
      *
-     * @return \phpQueryObject|string
+     * @return \phpQueryObject
      */
-    public function getTemplate()
+    public function getTemplate() : \phpQueryObject
     {
         return $this->template;
     }
@@ -130,9 +130,9 @@ class Templater
      *
      * @throws DomElementNotFountException
      */
-    public function setMultiData(array $data, $parent)
+    public function setMultiData(array $data, $parent) : \phpQueryObject
     {
-        if (\is_string($parent) && empty((string) ($parent = $this->template->find($parent)))) {
+        if (\is_string($parent) && empty((string) ($parent = $this->getTemplate()->find($parent)))) {
             throw new DomElementNotFountException();
         }
 
@@ -235,9 +235,9 @@ class Templater
      *
      * @throws DomElementNotFountException
      */
-    public function setData(array $data, &$parent)
+    public function setData(array $data, &$parent) : \phpQueryObject
     {
-        if (\is_string($parent) && empty((string) $parent = $this->template->find($parent))) {
+        if (\is_string($parent) && empty((string) $parent = $this->getTemplate()->find($parent))) {
             throw new DomElementNotFountException();
         }
 
