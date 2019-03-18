@@ -13,7 +13,7 @@ use Scaleplan\Templater\Exceptions\FileNotFountException;
  *
  * @package Scaleplan\Templater
  */
-class Templater
+class Templater implements TemplaterInterface
 {
     /**
      * Атрибуты, в которые можно вставлять значения
@@ -37,11 +37,16 @@ class Templater
     ];
 
     /**
+     * @var array
+     */
+    protected $settings;
+
+    /**
      * Шаблон/страница
      *
      * @var \phpQueryObject
      */
-    protected $template = '';
+    protected $template;
 
     /**
      * Класс css, указывающий на то что элемент нужно копировать для вставки данных
@@ -79,17 +84,57 @@ class Templater
     protected $subparentSelector = '.subparent';
 
     /**
+     * @var string
+     */
+    protected $includeAttribute = 'data-include';
+
+    /**
+     * @var string|null
+     */
+    protected $viewsPath;
+
+    /**
+     * @var array
+     */
+    protected $forbiddenSelectors;
+
+    /**
      * Установка конфигурации объекта
      *
      * @param array $settings - настройки
      */
     public function init(array $settings) : void
     {
+        $this->viewsPath = $_SERVER['DOCUMENT_ROOT'] . '/' . getenv('VIEWS_PATH');
         foreach ($settings as $setting => $value) {
             if (isset($this->{$setting})) {
                 $this->{$setting} = $value;
             }
         }
+
+        $this->settings = $settings;
+    }
+
+    /**
+     * Импортирования компоненты представления
+     */
+    public function renderIncludes() : void
+    {
+        $this->getTemplate()->find("[{$this->includeAttribute}]")->each(function($element) {
+            $element = pq($element);
+            $tplPath = $this->viewsPath . '/' . $element->attr($this->includeAttribute);
+            $newTpl = new static($tplPath, $this->settings);
+            $element->html($newTpl);
+        });
+    }
+
+    /**
+     * Удалить запрещенные к показу селекторы
+     */
+    public function removeForbidden() : void
+    {
+        $forbiddenSelector = implode(', ', $this->forbiddenSelectors);
+        $this->getTemplate()->find($forbiddenSelector)->remove();
     }
 
     /**
@@ -256,14 +301,15 @@ class Templater
         foreach ($data AS $key => $value) {
             if (\is_array($value)) {
                 $this->setMultiData($value, $parent->find(".$key{$this->subparentSelector}"));
-            } else {
-                $this->modifyElement($parent, $key, $value);
-
-                $parent->find("*[class*=_$key]")->each(function($element) use ($key, $value) {
-                    $element = pq($element);
-                    $this->modifyElement($element, $key, $value);
-                });
+                continue;
             }
+
+            $this->modifyElement($parent, $key, $value);
+
+            $parent->find("*[class*=_$key]")->each(function($element) use ($key, $value) {
+                $element = pq($element);
+                $this->modifyElement($element, $key, $value);
+            });
         }
 
         $parent->removeClass($this->cloneClassName);
