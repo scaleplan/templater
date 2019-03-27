@@ -145,7 +145,7 @@ class Templater implements TemplaterInterface
      *
      * @throws FileNotFountException
      */
-    public function __construct(\string $tplPath, array $settings = [])
+    public function __construct(string $tplPath, array $settings = [])
     {
         if (!file_exists($tplPath)) {
             throw new FileNotFountException();
