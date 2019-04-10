@@ -105,7 +105,7 @@ class Templater implements TemplaterInterface
      */
     public function init(array $settings) : void
     {
-        $this->viewsPath = $_SERVER['DOCUMENT_ROOT'] . '/' . getenv('VIEWS_PATH');
+        $this->viewsPath = getenv('BUNDLE_PATH') . getenv('VIEWS_PATH') . getenv('TEMPLATES_PATH');
         foreach ($settings as $setting => $value) {
             if (isset($this->{$setting})) {
                 $this->{$setting} = $value;
@@ -133,6 +133,10 @@ class Templater implements TemplaterInterface
      */
     public function removeForbidden() : void
     {
+        if (!$this->forbiddenSelectors || !\is_array($this->forbiddenSelectors)) {
+            return;
+        }
+
         $forbiddenSelector = implode(', ', $this->forbiddenSelectors);
         $this->getTemplate()->find($forbiddenSelector)->remove();
     }
@@ -256,7 +260,7 @@ class Templater implements TemplaterInterface
         }
 
         if ($this->isInsertable(['href'], $matches)) {
-            $element->attr('href', $element->attr('href') . $value);
+            $element->attr('href', str_replace("{{$key}}", $value, $element->attr('href')));
         }
 
         if ($this->isInsertable(['val', 'value'], $matches)) {
