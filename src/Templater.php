@@ -236,17 +236,17 @@ class Templater implements TemplaterInterface
      * @param string $key - имя элемента для вставки
      * @param string $value - значение для вставки
      *
-     * @return \phpQueryObject|bool
+     * @return \phpQueryObject
      */
-    protected function modifyElement(&$element, string &$key, ?string &$value)
+    protected function modifyElement(&$element, string &$key, ?string &$value) : \phpQueryObject
     {
-        if (!$value) {
-            return false;
+        if (!$this->dataDependsCheck($value, $element)) {
+            return $element;
         }
 
         $pattern = '/in_(' . implode('|', static::ALLOWED_ATTRS) . ")_$key/i";
         if (!preg_match_all($pattern, $element->attr('class'), $matches)) {
-            return false;
+            return $element;
         }
 
         $matches = $matches[1];
@@ -323,25 +323,34 @@ class Templater implements TemplaterInterface
     /**
      * Если данных нет, то прячет зависимые от этих данных элементы
      *
-     * @param array $data - данные
-     * @param \phpQueryObject $parent
+     * @param $data - данные
+     * @param \phpQueryObject $element
      *
      * @return bool
      */
-    protected function dataDependsCheck(array &$data, &$parent) : bool
+    protected function dataDependsCheck(&$data, &$element) : bool
     {
-        if ($data) {
-            return true;
+        if ($element->is('[data-depends-on]')) {
+            $dependsParent = $element;
+        } else {
+            $dependsParent = $element->parents('[data-depends-on]');
         }
 
-        if (!((string) $dependsParent = $parent->parents('*[data-depends-on]'))) {
+        if (!((string) $dependsParent)) {
             return true;
         }
 
         $dependsSelector = $dependsParent->attr('data-depends-on');
-        if ($parent->is($dependsSelector)) {
-            $dependsParent->addClass($this->noDisplayClass);
-            return false;
+        if ($dependsSelector === 'all' || $element->is($dependsSelector)) {
+            if ($dependsParent->is('[data-hide-if]')) {
+                if ($dependsParent->attr('data-hide-if') == $data) {
+                    $dependsParent->addClass($this->noDisplayClass);
+                    return false;
+                }
+            } elseif (null === $data || (\is_array($data) && $data)) {
+                $dependsParent->addClass($this->noDisplayClass);
+                return false;
+            }
         }
 
         return true;
