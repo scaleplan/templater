@@ -347,7 +347,7 @@ class Templater implements TemplaterInterface
                     $dependsParent->addClass($this->noDisplayClass);
                     return false;
                 }
-            } elseif (null === $data || (\is_array($data) && $data)) {
+            } elseif (null === $data || (\is_array($data) && !$data)) {
                 $dependsParent->addClass($this->noDisplayClass);
                 return false;
             }
