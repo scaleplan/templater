@@ -10,6 +10,7 @@ namespace Scaleplan\Templater\Exceptions;
 class TemplaterException extends \Exception
 {
     public const MESSAGE = 'Templater error.';
+    public const CODE = 500;
 
     /**
      * TemplaterException constructor.
@@ -20,6 +21,6 @@ class TemplaterException extends \Exception
      */
     public function __construct(string $message = '', int $code = 0, \Throwable $previous = null)
     {
-        parent::__construct($message ?: static::MESSAGE, $code, $previous);
+        parent::__construct($message ?: static::MESSAGE, $code ?: static::CODE, $previous);
     }
 }
