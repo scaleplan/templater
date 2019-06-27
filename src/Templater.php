@@ -3,6 +3,7 @@
 namespace Scaleplan\Templater;
 
 use phpQuery;
+use function Scaleplan\Helpers\get_required_env;
 use Scaleplan\Templater\Exceptions\DomElementNotFountException;
 use Scaleplan\Templater\Exceptions\FileNotFountException;
 
@@ -89,11 +90,6 @@ class Templater implements TemplaterInterface
     protected $includeAttribute = 'data-include';
 
     /**
-     * @var string|null
-     */
-    protected $viewsPath;
-
-    /**
      * @var array
      */
     protected $forbiddenSelectors;
@@ -105,7 +101,6 @@ class Templater implements TemplaterInterface
      */
     public function init(array $settings) : void
     {
-        $this->viewsPath = getenv('BUNDLE_PATH') . getenv('VIEWS_PATH') . getenv('TEMPLATES_PATH');
         foreach ($settings as $setting => $value) {
             if (isset($this->{$setting})) {
                 $this->{$setting} = $value;
@@ -117,12 +112,30 @@ class Templater implements TemplaterInterface
 
     /**
      * Импортирования компоненты представления
+     *
+     * @throws \Scaleplan\Helpers\Exceptions\EnvNotFoundException
      */
     public function renderIncludes() : void
     {
-        $this->getTemplate()->find("[{$this->includeAttribute}]")->each(function($element) {
+        static $privateViewsPath, $publicViewsPath;
+        if (!$privateViewsPath) {
+            $privateViewsPath = get_required_env('BUNDLE_PATH')
+                . get_required_env('VIEWS_PATH')
+                . get_required_env('PRIVATE_TEMPLATES_PATH');
+
+            $publicViewsPath = get_required_env('BUNDLE_PATH')
+                . get_required_env('VIEWS_PATH')
+                . get_required_env('PUBLIC_TEMPLATES_PATH');
+        }
+
+        $this->getTemplate()->find("[{$this->includeAttribute}]")->each(function ($element)
+        use ($privateViewsPath, $publicViewsPath) {
             $element = pq($element);
-            $tplPath = $this->viewsPath . '/' . $element->attr($this->includeAttribute);
+            $tplPath = $privateViewsPath . '/' . $element->attr($this->includeAttribute);
+            if (!file_exists($tplPath)) {
+                $tplPath = $publicViewsPath . '/' . $element->attr($this->includeAttribute);
+            }
+
             $newTpl = new static($tplPath, $this->settings);
             $element->html($newTpl);
         });
@@ -181,7 +194,7 @@ class Templater implements TemplaterInterface
      */
     public function setMultiData(array $data, $parent) : \phpQueryObject
     {
-        if (\is_string($parent) && empty((string) ($parent = $this->getTemplate()->find($parent)))) {
+        if (\is_string($parent) && empty((string)($parent = $this->getTemplate()->find($parent)))) {
             throw new DomElementNotFountException();
         }
 
@@ -286,7 +299,7 @@ class Templater implements TemplaterInterface
      */
     public function setData(array $data, &$parent) : \phpQueryObject
     {
-        if (\is_string($parent) && empty((string) $parent = $this->getTemplate()->find($parent))) {
+        if (\is_string($parent) && empty((string)$parent = $this->getTemplate()->find($parent))) {
             throw new DomElementNotFountException();
         }
 
@@ -310,7 +323,7 @@ class Templater implements TemplaterInterface
 
             $this->modifyElement($parent, $key, $value);
 
-            $parent->find("*[class*=_$key]")->each(function($element) use ($key, $value) {
+            $parent->find("*[class*=_$key]")->each(function ($element) use ($key, $value) {
                 $element = pq($element);
                 $this->modifyElement($element, $key, $value);
             });
@@ -336,7 +349,7 @@ class Templater implements TemplaterInterface
             $dependsParent = $element->parents('[data-depends-on]');
         }
 
-        if (!((string) $dependsParent)) {
+        if (!((string)$dependsParent)) {
             return true;
         }
 
@@ -368,7 +381,7 @@ class Templater implements TemplaterInterface
     {
         if (!$data) {
             if (!($parent = $parent->parents($this->parentSelector))
-                || !((string) $noDataElement = $parent->find($this->noDataSelector))) {
+                || !((string)$noDataElement = $parent->find($this->noDataSelector))) {
                 return true;
             }
 
