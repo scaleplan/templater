@@ -35,6 +35,7 @@ class Templater implements TemplaterInterface
         'data-src',
         'data-object-src',
         'data-account-id',
+        'data-href',
     ];
 
     /**
@@ -272,8 +273,12 @@ class Templater implements TemplaterInterface
             $element->addClass($value);
         }
 
-        if ($this->isInsertable(['href'], $matches)) {
+        if ($this->isInsertable(['href',], $matches)) {
             $element->attr('href', str_replace("{{$key}}", $value, $element->attr('href')));
+        }
+
+        if ($this->isInsertable(['data-href'], $matches)) {
+            $element->attr('data-href', str_replace("{{$key}}", $value, $element->attr('data-href')));
         }
 
         if ($this->isInsertable(['val', 'value'], $matches)) {
