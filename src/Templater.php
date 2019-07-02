@@ -2,7 +2,6 @@
 
 namespace Scaleplan\Templater;
 
-use phpQuery;
 use function Scaleplan\Helpers\get_required_env;
 use Scaleplan\Templater\Exceptions\DomElementNotFountException;
 use Scaleplan\Templater\Exceptions\FileNotFountException;
@@ -46,9 +45,9 @@ class Templater implements TemplaterInterface
     /**
      * Шаблон/страница
      *
-     * @var \phpQueryObject
+     * @var string
      */
-    protected $template;
+    protected $templatePath;
 
     /**
      * Класс css, указывающий на то что элемент нужно копировать для вставки данных
@@ -96,6 +95,11 @@ class Templater implements TemplaterInterface
     protected $forbiddenSelectors;
 
     /**
+     * @var bool
+     */
+    protected $renderByMustache = true;
+
+    /**
      * Установка конфигурации объекта
      *
      * @param array $settings - настройки
@@ -129,7 +133,7 @@ class Templater implements TemplaterInterface
                 . get_required_env('PUBLIC_TEMPLATES_PATH');
         }
 
-        $this->getTemplate()->find("[{$this->includeAttribute}]")->each(function ($element)
+        $this->getTemplate()->find("[$this->includeAttribute]")->each(function ($element)
         use ($privateViewsPath, $publicViewsPath) {
             $element = pq($element);
             $tplPath = $privateViewsPath . '/' . $element->attr($this->includeAttribute);
@@ -137,8 +141,7 @@ class Templater implements TemplaterInterface
                 $tplPath = $publicViewsPath . '/' . $element->attr($this->includeAttribute);
             }
 
-            $newTpl = new static($tplPath, $this->settings);
-            $element->html($newTpl);
+            $element->html(file_get_contents($tplPath));
         });
     }
 
@@ -169,7 +172,7 @@ class Templater implements TemplaterInterface
             throw new FileNotFountException();
         }
 
-        $this->template = phpQuery::newDocumentFileHTML($tplPath);
+        $this->templatePath = $tplPath;
         $this->init($settings);
     }
 
@@ -180,7 +183,12 @@ class Templater implements TemplaterInterface
      */
     public function getTemplate() : \phpQueryObject
     {
-        return $this->template;
+        static $template;
+        if (!$template) {
+            $template = \phpQuery::newDocumentFileHTML($this->templatePath);
+        }
+
+        return $template;
     }
 
     /**
@@ -195,11 +203,11 @@ class Templater implements TemplaterInterface
      */
     public function setMultiData(array $data, $parent) : \phpQueryObject
     {
-        if (\is_string($parent) && empty((string)($parent = $this->getTemplate()->find($parent)))) {
+        if (\is_string($parent) && !($parent = $this->getTemplate()->find($parent))->length) {
             throw new DomElementNotFountException();
         }
 
-        if (\is_array($data) && !$parent->hasClass($this->cloneClassName)) {
+        if (!$parent->hasClass($this->cloneClassName)) {
             $this->setData($data, $parent);
             return $parent->parent();
         }
@@ -208,7 +216,39 @@ class Templater implements TemplaterInterface
             $data = [$data];
         }
 
-        if (\is_array($data[0]) && !$this->dataDependsCheck($data[0], $parent)) {
+        if (!$this->dataDependsCheck($data[0], $parent)) {
+            return $parent->parent();
+        }
+
+        return $this->fillingMultiData($data, $parent);
+    }
+
+    /**
+     * @param array $data
+     * @param \phpQueryObject $parent
+     *
+     * @return \phpQueryObject
+     *
+     * @throws DomElementNotFountException
+     */
+    protected function fillingMultiData(array $data, \phpQueryObject $parent) : \phpQueryObject
+    {
+        $clone = $parent->clone();
+        if ($this->renderByMustache && count($data) > 1) {
+            $mustacheTpl = (string)$this->setData($data[0], $clone, true);
+            foreach ($data as $row) {
+                if (!\is_array($row)) {
+                    continue;
+                }
+
+                $filledTpl = $mustacheTpl;
+                foreach ($row as $field => $value) {
+                    $filledTpl = str_replace("{{$field}}", $value, $filledTpl);
+                }
+
+                $parent->after($filledTpl);
+            }
+
             return $parent->parent();
         }
 
@@ -217,7 +257,6 @@ class Templater implements TemplaterInterface
                 continue;
             }
 
-            $clone = $parent->clone();
             $parent->after($clone);
             $this->setData($row, $clone);
         }
@@ -265,8 +304,12 @@ class Templater implements TemplaterInterface
 
         $matches = $matches[1];
 
-        if ($this->isInsertable(['text'], $matches)) {
+        if ($this->isInsertable(['html'], $matches)) {
             $element->html($value);
+        }
+
+        if ($this->isInsertable(['text'], $matches)) {
+            $element->text($value);
         }
 
         if ($this->isInsertable(['class'], $matches)) {
@@ -297,16 +340,19 @@ class Templater implements TemplaterInterface
      *
      * @param array $data - данные для вставки
      * @param string|\phpQueryObject $parent
+     * @param bool $generateMustache
      *
      * @return \phpQueryObject
      *
      * @throws DomElementNotFountException
      */
-    public function setData(array $data, &$parent) : \phpQueryObject
+    public function setData(array $data, &$parent, bool $generateMustache = false) : \phpQueryObject
     {
-        if (\is_string($parent) && empty((string)$parent = $this->getTemplate()->find($parent))) {
+        if (\is_string($parent) && !($parent = $this->getTemplate()->find($parent))->length) {
             throw new DomElementNotFountException();
         }
+
+        $parent->removeClass($this->cloneClassName);
 
         if (isset($data[0])) {
             $data = $data[0];
@@ -321,20 +367,23 @@ class Templater implements TemplaterInterface
         }
 
         foreach ($data AS $key => $value) {
+            if ($generateMustache) {
+                $value = "{{$key}}";
+            }
+
             if (\is_array($value)) {
-                $this->setMultiData($value, $parent->find(".$key{$this->subparentSelector}"));
+                $this->setMultiData($value, $parent->find(".$key.{$this->subparentSelector}"));
                 continue;
             }
 
             $this->modifyElement($parent, $key, $value);
 
-            $parent->find("*[class*=_$key]")->each(function ($element) use ($key, $value) {
+            $parent->find("[class*=_$key]")->each(function ($element) use ($key, $value) {
                 $element = pq($element);
                 $this->modifyElement($element, $key, $value);
             });
         }
 
-        $parent->removeClass($this->cloneClassName);
         return $parent;
     }
 
@@ -354,7 +403,7 @@ class Templater implements TemplaterInterface
             $dependsParent = $element->parents('[data-depends-on]');
         }
 
-        if (!((string)$dependsParent)) {
+        if (!$dependsParent->length) {
             return true;
         }
 
@@ -385,8 +434,8 @@ class Templater implements TemplaterInterface
     protected function isShowNoData(array &$data, &$parent) : bool
     {
         if (!$data) {
-            if (!($parent = $parent->parents($this->parentSelector))
-                || !((string)$noDataElement = $parent->find($this->noDataSelector))) {
+            if (!($parent = $parent->parents($this->parentSelector))->length
+                || !($noDataElement = $parent->children($this->noDataSelector))->length) {
                 return true;
             }
 
