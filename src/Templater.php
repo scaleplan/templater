@@ -104,7 +104,17 @@ class Templater implements TemplaterInterface
     /**
      * @var string
      */
-    protected $includeAttribute = 'data-include';
+    protected $includesAttribute = 'data-includes';
+
+    /**
+     * @var string
+     */
+    protected $includesTypesAttribute = 'data-includes-types';
+
+    /**
+     * @var string
+     */
+    protected $defaultIncludeType = 'prepend';
 
     /**
      * @var array
@@ -141,24 +151,31 @@ class Templater implements TemplaterInterface
     {
         static $privateViewsPath, $publicViewsPath;
         if (!$privateViewsPath) {
+            $locale = locale_accept_from_http($_SERVER['HTTP_ACCEPT_LANGUAGE']) ?: get_required_env('DEFAULT_LANG');
             $privateViewsPath = get_required_env('BUNDLE_PATH')
                 . get_required_env('VIEWS_PATH')
-                . get_required_env('PRIVATE_TEMPLATES_PATH');
+                . get_required_env('PRIVATE_TEMPLATES_PATH')
+                . '/' . $locale;
 
             $publicViewsPath = get_required_env('BUNDLE_PATH')
                 . get_required_env('VIEWS_PATH')
-                . get_required_env('PUBLIC_TEMPLATES_PATH');
+                . get_required_env('PUBLIC_TEMPLATES_PATH')
+                . '/' . $locale;
         }
 
-        $this->getTemplate()->find("[$this->includeAttribute]")->each(function ($element)
+        $this->getTemplate()->find("[$this->includesAttribute]")->each(function ($element)
         use ($privateViewsPath, $publicViewsPath) {
-            $paths = explode(', ', $element->attr($this->includeAttribute));
             $element = pq($element);
-            foreach ($paths as $path) {
+            $paths = explode(', ', $element->attr($this->includesAttribute));
+            $includeTypes = explode(', ', $element->attr($this->includesTypesAttribute));
+            $includeType = $includeTypes[0] ?: $this->defaultIncludeType;
+            foreach ($paths as $index => $path) {
+                $path = "$path.html";
                 $tplPath = file_exists($privateViewsPath . '/' . $path)
                     ? $privateViewsPath . '/' . $path
                     : $publicViewsPath . '/' . $path;
-                $element->append(file_get_contents($tplPath));
+                $includeType = $includeTypes[$index] ?: $includeType;
+                $element->$includeType(file_get_contents($tplPath));
             }
         });
     }
@@ -225,8 +242,7 @@ class Templater implements TemplaterInterface
             throw new DomElementNotFountException();
         }
 
-        if (!$parent->hasClass($this->cloneClassName)) {
-            $this->setData($data, $parent);
+        if (!$this->isShowNoData($data, $parent)) {
             return $parent->parent();
         }
 
@@ -234,8 +250,14 @@ class Templater implements TemplaterInterface
             $data = [$data];
         }
 
-        if (!$this->isShowNoData($data, $parent)) {
-            return $parent;
+        $parent->find('[data-depends-on]')->each(function($element) use ($data) {
+            $element = pq($element);
+            $this->dataDependsCheck($data[0], $element);
+        });
+
+        if (!$parent->hasClass($this->cloneClassName)) {
+            $this->setData($data, $parent);
+            return $parent->parent();
         }
 
         return $this->fillingMultiData($data, $parent);
@@ -373,7 +395,7 @@ class Templater implements TemplaterInterface
         }
 
         foreach ($data AS $key => $value) {
-            if (!$this->dataDependsCheck($key, $value, $parent)) {
+            if (!$this->dataDependsCheck($data, $parent, $key)) {
                 return $parent;
             }
 
@@ -400,16 +422,16 @@ class Templater implements TemplaterInterface
     /**
      * Если данных нет, то прячет зависимые от этих данных элементы
      *
-     * @param string $key
-     * @param $value
+     * @param array $data
      * @param \phpQueryObject $element
+     * @param string|null $key
      *
      * @return bool
      */
-    protected function dataDependsCheck(string $key, $value, \phpQueryObject $element) : bool
+    protected function dataDependsCheck(array $data, \phpQueryObject $element, string $key = null) : bool
     {
-        if (!\in_array($value, [null, []], true)) {
-            return true;
+        if (null !== $key) {
+            $data = $data[$key];
         }
 
         if ($element->is('[data-depends-on]')) {
@@ -422,8 +444,14 @@ class Templater implements TemplaterInterface
             return true;
         }
 
-        if ($dependsParent->attr('data-depends-on') === $key) {
-            $element->addClass($this->noDisplayClass);
+        $dependsKey = $dependsParent->attr('data-depends-on');
+        if (\is_array($data) && !array_key_exists($dependsKey, $data)) {
+            $dependsParent->remove();
+            return false;
+        }
+
+        if ($dependsKey === $key) {
+            $dependsParent->addClass($this->noDisplayClass);
             return false;
         }
 
