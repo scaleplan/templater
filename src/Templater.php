@@ -2,6 +2,8 @@
 
 namespace Scaleplan\Templater;
 
+use PhpQuery\PhpQueryObject;
+use PhpQuery\PhpQuery;
 use function Scaleplan\Helpers\get_required_env;
 use Scaleplan\Templater\Exceptions\DomElementNotFountException;
 use Scaleplan\Templater\Exceptions\FileNotFountException;
@@ -165,7 +167,7 @@ class Templater implements TemplaterInterface
 
         $this->getTemplate()->find("[$this->includesAttribute]")->each(function ($element)
         use ($privateViewsPath, $publicViewsPath) {
-            $element = pq($element);
+            $element = PhpQuery::pq($element);
             $paths = explode(', ', $element->attr($this->includesAttribute));
             $includeTypes = explode(', ', $element->attr($this->includesTypesAttribute));
             $includeType = $includeTypes[0] ?: $this->defaultIncludeType;
@@ -214,13 +216,13 @@ class Templater implements TemplaterInterface
     /**
      * Вернуть шаблон/страницу
      *
-     * @return \phpQueryObject
+     * @return PhpQueryObject
      */
-    public function getTemplate() : \phpQueryObject
+    public function getTemplate() : PhpQueryObject
     {
         static $template;
         if (!$template) {
-            $template = \phpQuery::newDocumentFileHTML($this->templatePath);
+            $template = PhpQuery::newDocumentFileHTML($this->templatePath);
         }
 
         return $template;
@@ -230,13 +232,13 @@ class Templater implements TemplaterInterface
      * Вставить в шаблон несколько однородных записей (при этом на каждую запись создается копия DOM-объекта-родителя)
      *
      * @param array $data - данные для вставки
-     * @param string|\phpQueryObject $parent
+     * @param string|PhpQueryObject $parent
      *
-     * @return \phpQueryObject
+     * @return PhpQueryObject
      *
      * @throws DomElementNotFountException
      */
-    public function setMultiData(array $data, $parent) : \phpQueryObject
+    public function setMultiData(array $data, $parent) : PhpQueryObject
     {
         if (\is_string($parent) && !($parent = $this->getTemplate()->find($parent))->length) {
             throw new DomElementNotFountException();
@@ -251,7 +253,7 @@ class Templater implements TemplaterInterface
         }
 
         $parent->find('[data-depends-on]')->each(function($element) use ($data) {
-            $element = pq($element);
+            $element = PhpQuery::pq($element);
             $this->dataDependsCheck($data[0], $element);
         });
 
@@ -265,13 +267,13 @@ class Templater implements TemplaterInterface
 
     /**
      * @param array $data
-     * @param \phpQueryObject $parent
+     * @param PhpQueryObject $parent
      *
-     * @return \phpQueryObject
+     * @return PhpQueryObject
      *
      * @throws DomElementNotFountException
      */
-    protected function fillingMultiData(array $data, \phpQueryObject $parent) : \phpQueryObject
+    protected function fillingMultiData(array $data, PhpQueryObject $parent) : PhpQueryObject
     {
         $clone = $parent->clone();
         if ($this->renderByMustache && count($data) > 1) {
@@ -325,13 +327,13 @@ class Templater implements TemplaterInterface
     /**
      * Заполнение элемента данными
      *
-     * @param \phpQueryObject $element
+     * @param PhpQueryObject $element
      * @param string $key - имя элемента для вставки
      * @param string $value - значение для вставки
      *
-     * @return \phpQueryObject
+     * @return PhpQueryObject
      */
-    protected function modifyElement(&$element, string &$key, ?string &$value) : \phpQueryObject
+    protected function modifyElement(&$element, string &$key, ?string &$value) : PhpQueryObject
     {
         $pattern = '/in_(' . implode('|', static::ALLOWED_ATTRS) . ")_$key/i";
         if (!preg_match_all($pattern, $element->attr('class'), $matches)) {
@@ -375,14 +377,14 @@ class Templater implements TemplaterInterface
      * Вставить данные в DOM-объект шаблона
      *
      * @param array $data - данные для вставки
-     * @param string|\phpQueryObject $parent
+     * @param string|PhpQueryObject $parent
      * @param bool $generateMustache
      *
-     * @return \phpQueryObject
+     * @return PhpQueryObject
      *
      * @throws DomElementNotFountException
      */
-    public function setData(array $data, &$parent, bool $generateMustache = false) : \phpQueryObject
+    public function setData(array $data, &$parent, bool $generateMustache = false) : PhpQueryObject
     {
         if (\is_string($parent) && !($parent = $this->getTemplate()->find($parent))->length) {
             throw new DomElementNotFountException();
@@ -411,7 +413,7 @@ class Templater implements TemplaterInterface
             $this->modifyElement($parent, $key, $value);
 
             $parent->find("[class*=_$key]")->each(function ($element) use ($key, $value) {
-                $element = pq($element);
+                $element = PhpQuery::pq($element);
                 $this->modifyElement($element, $key, $value);
             });
         }
@@ -423,12 +425,12 @@ class Templater implements TemplaterInterface
      * Если данных нет, то прячет зависимые от этих данных элементы
      *
      * @param array $data
-     * @param \phpQueryObject $element
+     * @param PhpQueryObject $element
      * @param string|null $key
      *
      * @return bool
      */
-    protected function dataDependsCheck(array $data, \phpQueryObject $element, string $key = null) : bool
+    protected function dataDependsCheck(array $data, PhpQueryObject $element, string $key = null) : bool
     {
         if (null !== $key) {
             $data = $data[$key];
@@ -462,7 +464,7 @@ class Templater implements TemplaterInterface
      * Показать блок с сообщением об отсутствии данных, если данных нет
      *
      * @param array $data - данные
-     * @param \phpQueryObject $parent
+     * @param PhpQueryObject $parent
      *
      * @return bool
      */
