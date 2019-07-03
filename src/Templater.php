@@ -15,26 +15,43 @@ use Scaleplan\Templater\Exceptions\FileNotFountException;
  */
 class Templater implements TemplaterInterface
 {
+    public const ATTR_HTML            = 'html';
+    public const ATTR_CLASS           = 'class';
+    public const ATTR_TEXT            = 'text';
+    public const ATTR_VAL             = 'val';
+    public const ATTR_VALUE           = 'value';
+    public const ATTR_ID              = 'id';
+    public const ATTR_SRC             = 'src';
+    public const ATTR_TITLE           = 'title';
+    public const ATTR_HREF            = 'href';
+    public const ATTR_DATA_OBJECT_SRC = 'data-object-src';
+    public const ATTR_DATA_TYPE       = 'data-type';
+    public const ATTR_DATA_FILE_TYPE  = 'data-file-type';
+    public const ATTR_DATA_FORM       = 'data-form';
+    public const ATTR_DATA_SRC        = 'data-src';
+    public const ATTR_DATA_ACCOUNT_ID = 'data-account-id';
+    public const ATTR_DATA_HREF       = 'data-href';
+
     /**
      * Атрибуты, в которые можно вставлять значения
      */
     public const ALLOWED_ATTRS = [
-        'class',
-        'text',
-        'val',
-        'value',
-        'id',
-        'src',
-        'title',
-        'href',
-        'data-object-src',
-        'data-type',
-        'data-file-type',
-        'data-form',
-        'data-src',
-        'data-object-src',
-        'data-account-id',
-        'data-href',
+        self::ATTR_HTML,
+        self::ATTR_CLASS,
+        self::ATTR_TEXT,
+        self::ATTR_VAL,
+        self::ATTR_VALUE,
+        self::ATTR_ID,
+        self::ATTR_SRC,
+        self::ATTR_TITLE,
+        self::ATTR_HREF,
+        self::ATTR_DATA_OBJECT_SRC,
+        self::ATTR_DATA_TYPE,
+        self::ATTR_DATA_FILE_TYPE,
+        self::ATTR_DATA_FORM,
+        self::ATTR_DATA_SRC,
+        self::ATTR_DATA_ACCOUNT_ID,
+        self::ATTR_DATA_HREF,
     ];
 
     /**
@@ -135,13 +152,14 @@ class Templater implements TemplaterInterface
 
         $this->getTemplate()->find("[$this->includeAttribute]")->each(function ($element)
         use ($privateViewsPath, $publicViewsPath) {
+            $paths = explode(', ', $element->attr($this->includeAttribute));
             $element = pq($element);
-            $tplPath = $privateViewsPath . '/' . $element->attr($this->includeAttribute);
-            if (!file_exists($tplPath)) {
-                $tplPath = $publicViewsPath . '/' . $element->attr($this->includeAttribute);
+            foreach ($paths as $path) {
+                $tplPath = file_exists($privateViewsPath . '/' . $path)
+                    ? $privateViewsPath . '/' . $path
+                    : $publicViewsPath . '/' . $path;
+                $element->append(file_get_contents($tplPath));
             }
-
-            $element->html(file_get_contents($tplPath));
         });
     }
 
@@ -216,8 +234,8 @@ class Templater implements TemplaterInterface
             $data = [$data];
         }
 
-        if (!$this->dataDependsCheck($data[0], $parent)) {
-            return $parent->parent();
+        if (!$this->isShowNoData($data, $parent)) {
+            return $parent;
         }
 
         return $this->fillingMultiData($data, $parent);
@@ -241,7 +259,7 @@ class Templater implements TemplaterInterface
                     continue;
                 }
 
-                $filledTpl = $mustacheTpl;
+                $filledTpl = urldecode($mustacheTpl);
                 foreach ($row as $field => $value) {
                     $filledTpl = str_replace("{{$field}}", $value, $filledTpl);
                 }
@@ -293,10 +311,6 @@ class Templater implements TemplaterInterface
      */
     protected function modifyElement(&$element, string &$key, ?string &$value) : \phpQueryObject
     {
-        if (!$this->dataDependsCheck($value, $element)) {
-            return $element;
-        }
-
         $pattern = '/in_(' . implode('|', static::ALLOWED_ATTRS) . ")_$key/i";
         if (!preg_match_all($pattern, $element->attr('class'), $matches)) {
             return $element;
@@ -304,27 +318,27 @@ class Templater implements TemplaterInterface
 
         $matches = $matches[1];
 
-        if ($this->isInsertable(['html'], $matches)) {
+        if ($this->isInsertable([static::ATTR_HTML,], $matches)) {
             $element->html($value);
         }
 
-        if ($this->isInsertable(['text'], $matches)) {
+        if ($this->isInsertable([static::ATTR_TEXT,], $matches)) {
             $element->text($value);
         }
 
-        if ($this->isInsertable(['class'], $matches)) {
+        if ($this->isInsertable([static::ATTR_CLASS,], $matches)) {
             $element->addClass($value);
         }
 
-        if ($this->isInsertable(['href',], $matches)) {
-            $element->attr('href', str_replace("{{$key}}", $value, $element->attr('href')));
+        if ($this->isInsertable([static::ATTR_HREF,], $matches)) {
+            $element->attr('href', str_replace("{{$key}}", $value, $element->attr(static::ATTR_HREF)));
         }
 
-        if ($this->isInsertable(['data-href'], $matches)) {
-            $element->attr('data-href', str_replace("{{$key}}", $value, $element->attr('data-href')));
+        if ($this->isInsertable([static::ATTR_DATA_HREF,], $matches)) {
+            $element->attr('data-href', str_replace("{{$key}}", $value, $element->attr(static::ATTR_DATA_HREF)));
         }
 
-        if ($this->isInsertable(['val', 'value'], $matches)) {
+        if ($this->isInsertable([static::ATTR_VAL, static::ATTR_VALUE,], $matches)) {
             $element->val($value);
         }
 
@@ -358,21 +372,17 @@ class Templater implements TemplaterInterface
             $data = $data[0];
         }
 
-        if (!$this->dataDependsCheck($data, $parent)) {
-            return $parent;
-        }
-
-        if (!$this->isShowNoData($data, $parent)) {
-            return $parent;
-        }
-
         foreach ($data AS $key => $value) {
+            if (!$this->dataDependsCheck($key, $value, $parent)) {
+                return $parent;
+            }
+
             if ($generateMustache) {
                 $value = "{{$key}}";
             }
 
             if (\is_array($value)) {
-                $this->setMultiData($value, $parent->find(".$key.{$this->subparentSelector}"));
+                $this->setMultiData($value, $parent->find(".$key{$this->subparentSelector}"));
                 continue;
             }
 
@@ -390,13 +400,18 @@ class Templater implements TemplaterInterface
     /**
      * Если данных нет, то прячет зависимые от этих данных элементы
      *
-     * @param $data - данные
+     * @param string $key
+     * @param $value
      * @param \phpQueryObject $element
      *
      * @return bool
      */
-    protected function dataDependsCheck(&$data, &$element) : bool
+    protected function dataDependsCheck(string $key, $value, \phpQueryObject $element) : bool
     {
+        if (!\in_array($value, [null, []], true)) {
+            return true;
+        }
+
         if ($element->is('[data-depends-on]')) {
             $dependsParent = $element;
         } else {
@@ -407,17 +422,9 @@ class Templater implements TemplaterInterface
             return true;
         }
 
-        $dependsSelector = $dependsParent->attr('data-depends-on');
-        if ($dependsSelector === 'all' || $element->is($dependsSelector)) {
-            if ($dependsParent->is('[data-hide-if]')) {
-                if ($dependsParent->attr('data-hide-if') == $data) {
-                    $dependsParent->addClass($this->noDisplayClass);
-                    return false;
-                }
-            } elseif (null === $data || (\is_array($data) && !$data)) {
-                $dependsParent->addClass($this->noDisplayClass);
-                return false;
-            }
+        if ($dependsParent->attr('data-depends-on') === $key) {
+            $element->addClass($this->noDisplayClass);
+            return false;
         }
 
         return true;
