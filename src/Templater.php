@@ -147,6 +147,7 @@ class Templater implements TemplaterInterface
     /**
      * Импортирования компоненты представления
      *
+     * @throws \PhpQuery\Exceptions\PhpQueryException
      * @throws \Scaleplan\Helpers\Exceptions\EnvNotFoundException
      */
     public function renderIncludes() : void
@@ -217,6 +218,8 @@ class Templater implements TemplaterInterface
      * Вернуть шаблон/страницу
      *
      * @return PhpQueryObject
+     *
+     * @throws \Exception
      */
     public function getTemplate() : PhpQueryObject
     {
@@ -237,6 +240,8 @@ class Templater implements TemplaterInterface
      * @return PhpQueryObject
      *
      * @throws DomElementNotFountException
+     * @throws \PhpQuery\Exceptions\PhpQueryException
+     * @throws \Exception
      */
     public function setMultiData(array $data, $parent) : PhpQueryObject
     {
@@ -270,8 +275,8 @@ class Templater implements TemplaterInterface
      * @param PhpQueryObject $parent
      *
      * @return PhpQueryObject
-     *
      * @throws DomElementNotFountException
+     * @throws \PhpQuery\Exceptions\PhpQueryException
      */
     protected function fillingMultiData(array $data, PhpQueryObject $parent) : PhpQueryObject
     {
@@ -332,6 +337,8 @@ class Templater implements TemplaterInterface
      * @param string $value - значение для вставки
      *
      * @return PhpQueryObject
+     *
+     * @throws \PhpQuery\Exceptions\PhpQueryException
      */
     protected function modifyElement(&$element, string &$key, ?string &$value) : PhpQueryObject
     {
@@ -383,6 +390,8 @@ class Templater implements TemplaterInterface
      * @return PhpQueryObject
      *
      * @throws DomElementNotFountException
+     * @throws \PhpQuery\Exceptions\PhpQueryException
+     * @throws \Exception
      */
     public function setData(array $data, &$parent, bool $generateMustache = false) : PhpQueryObject
     {
@@ -429,6 +438,8 @@ class Templater implements TemplaterInterface
      * @param string|null $key
      *
      * @return bool
+     *
+     * @throws \PhpQuery\Exceptions\PhpQueryException
      */
     protected function dataDependsCheck(array $data, PhpQueryObject $element, string $key = null) : bool
     {
@@ -467,6 +478,8 @@ class Templater implements TemplaterInterface
      * @param PhpQueryObject $parent
      *
      * @return bool
+     *
+     * @throws \PhpQuery\Exceptions\PhpQueryException
      */
     protected function isShowNoData(array &$data, &$parent) : bool
     {
