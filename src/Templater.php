@@ -129,6 +129,11 @@ class Templater implements TemplaterInterface
     protected $renderByMustache = true;
 
     /**
+     * @var string
+     */
+    protected $dataInAttribute = 'data-in';
+
+    /**
      * Установка конфигурации объекта
      *
      * @param array $settings - настройки
@@ -149,6 +154,7 @@ class Templater implements TemplaterInterface
      *
      * @throws \PhpQuery\Exceptions\PhpQueryException
      * @throws \Scaleplan\Helpers\Exceptions\EnvNotFoundException
+     * @throws \Exception
      */
     public function renderIncludes() : void
     {
@@ -185,6 +191,9 @@ class Templater implements TemplaterInterface
 
     /**
      * Удалить запрещенные к показу селекторы
+     *
+     * @throws \PhpQuery\Exceptions\PhpQueryException
+     * @throws \Exception
      */
     public function removeForbidden() : void
     {
@@ -342,12 +351,11 @@ class Templater implements TemplaterInterface
      */
     protected function modifyElement(&$element, string &$key, ?string &$value) : PhpQueryObject
     {
-        $pattern = '/in_(' . implode('|', static::ALLOWED_ATTRS) . ")_$key/i";
-        if (!preg_match_all($pattern, $element->attr('class'), $matches)) {
+        $matches = array_map('trim', explode(',', (string)$element->attr("{$this->dataInAttribute}-$key")));
+
+        if (!array_filter($matches)) {
             return $element;
         }
-
-        $matches = $matches[1];
 
         if ($this->isInsertable([static::ATTR_HTML,], $matches)) {
             $element->html($value);
@@ -421,7 +429,7 @@ class Templater implements TemplaterInterface
 
             $this->modifyElement($parent, $key, $value);
 
-            $parent->find("[class*=_$key]")->each(function ($element) use ($key, $value) {
+            $parent->find("[{$this->dataInAttribute}-$key]")->each(function ($element) use ($key, $value) {
                 $element = PhpQuery::pq($element);
                 $this->modifyElement($element, $key, $value);
             });
