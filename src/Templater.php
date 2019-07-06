@@ -7,6 +7,7 @@ use PhpQuery\PhpQuery;
 use function Scaleplan\Helpers\get_required_env;
 use Scaleplan\Templater\Exceptions\DomElementNotFountException;
 use Scaleplan\Templater\Exceptions\FileNotFountException;
+use Scaleplan\Templater\Exceptions\FilePathNotSetException;
 
 /**
  * Шаблонизатор
@@ -22,39 +23,8 @@ class Templater implements TemplaterInterface
     public const ATTR_TEXT            = 'text';
     public const ATTR_VAL             = 'val';
     public const ATTR_VALUE           = 'value';
-    public const ATTR_ID              = 'id';
-    public const ATTR_SRC             = 'src';
-    public const ATTR_TITLE           = 'title';
     public const ATTR_HREF            = 'href';
-    public const ATTR_DATA_OBJECT_SRC = 'data-object-src';
-    public const ATTR_DATA_TYPE       = 'data-type';
-    public const ATTR_DATA_FILE_TYPE  = 'data-file-type';
-    public const ATTR_DATA_FORM       = 'data-form';
-    public const ATTR_DATA_SRC        = 'data-src';
-    public const ATTR_DATA_ACCOUNT_ID = 'data-account-id';
     public const ATTR_DATA_HREF       = 'data-href';
-
-    /**
-     * Атрибуты, в которые можно вставлять значения
-     */
-    public const ALLOWED_ATTRS = [
-        self::ATTR_HTML,
-        self::ATTR_CLASS,
-        self::ATTR_TEXT,
-        self::ATTR_VAL,
-        self::ATTR_VALUE,
-        self::ATTR_ID,
-        self::ATTR_SRC,
-        self::ATTR_TITLE,
-        self::ATTR_HREF,
-        self::ATTR_DATA_OBJECT_SRC,
-        self::ATTR_DATA_TYPE,
-        self::ATTR_DATA_FILE_TYPE,
-        self::ATTR_DATA_FORM,
-        self::ATTR_DATA_SRC,
-        self::ATTR_DATA_ACCOUNT_ID,
-        self::ATTR_DATA_HREF,
-    ];
 
     /**
      * @var array
@@ -134,6 +104,18 @@ class Templater implements TemplaterInterface
     protected $dataInAttribute = 'data-in';
 
     /**
+     * Конструктор
+     *
+     * @param string $tplPath - имя файла шаблона
+     * @param array $settings - настройки
+     */
+    public function __construct(string $tplPath = null, array $settings = [])
+    {
+        $this->templatePath = $tplPath;
+        $this->init($settings);
+    }
+
+    /**
      * Установка конфигурации объекта
      *
      * @param array $settings - настройки
@@ -206,24 +188,6 @@ class Templater implements TemplaterInterface
     }
 
     /**
-     * Конструктор
-     *
-     * @param string $tplPath - имя файла шаблона
-     * @param array $settings - настройки
-     *
-     * @throws FileNotFountException
-     */
-    public function __construct(string $tplPath, array $settings = [])
-    {
-        if (!file_exists($tplPath)) {
-            throw new FileNotFountException();
-        }
-
-        $this->templatePath = $tplPath;
-        $this->init($settings);
-    }
-
-    /**
      * Вернуть шаблон/страницу
      *
      * @return PhpQueryObject
@@ -234,6 +198,14 @@ class Templater implements TemplaterInterface
     {
         static $template;
         if (!$template) {
+            if (!$this->templatePath) {
+                throw new FilePathNotSetException();
+            }
+
+            if (!file_exists($this->templatePath)) {
+                throw new FileNotFountException();
+            }
+
             $template = PhpQuery::newDocumentFileHTML($this->templatePath);
         }
 
@@ -254,7 +226,7 @@ class Templater implements TemplaterInterface
      */
     public function setMultiData(array $data, $parent) : PhpQueryObject
     {
-        if (\is_string($parent) && !($parent = $this->getTemplate()->find($parent))->length) {
+        if (\is_string($parent) && !($parent = $this->getTemplate()->find($parent))->count()) {
             throw new DomElementNotFountException();
         }
 
@@ -403,7 +375,7 @@ class Templater implements TemplaterInterface
      */
     public function setData(array $data, &$parent, bool $generateMustache = false) : PhpQueryObject
     {
-        if (\is_string($parent) && !($parent = $this->getTemplate()->find($parent))->length) {
+        if (\is_string($parent) && !($parent = $this->getTemplate()->find($parent))->count()) {
             throw new DomElementNotFountException();
         }
 
@@ -461,7 +433,7 @@ class Templater implements TemplaterInterface
             $dependsParent = $element->parents('[data-depends-on]');
         }
 
-        if (!$dependsParent->length) {
+        if (!$dependsParent->count()) {
             return true;
         }
 
@@ -492,8 +464,8 @@ class Templater implements TemplaterInterface
     protected function isShowNoData(array &$data, &$parent) : bool
     {
         if (!$data) {
-            if (!($parent = $parent->parents($this->parentSelector))->length
-                || !($noDataElement = $parent->children($this->noDataSelector))->length) {
+            if (!($parent = $parent->parents($this->parentSelector))->count()
+                || !($noDataElement = $parent->children($this->noDataSelector))->count()) {
                 return true;
             }
 
