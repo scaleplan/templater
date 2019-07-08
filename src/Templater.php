@@ -166,7 +166,23 @@ class Templater implements TemplaterInterface
                     ? $privateViewsPath . '/' . $path
                     : $publicViewsPath . '/' . $path;
                 $includeType = $includeTypes[$index] ?: $includeType;
-                $element->$includeType(file_get_contents($tplPath));
+                switch ($includeType) {
+                    case 'prepend':
+                    case 'append':
+                        $element->$includeType(file_get_contents($tplPath));
+                        break;
+
+                    case 'instead':
+                        $element->replaceWith(file_get_contents($tplPath));
+                        break;
+
+                    case 'into':
+                        $element->html(file_get_contents($tplPath));
+                        break;
+                }
+
+                $element->removeAttr($this->includesAttribute);
+                $element->removeAttr($this->includesTypesAttribute);
             }
         });
     }
