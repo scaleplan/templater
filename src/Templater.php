@@ -2,12 +2,12 @@
 
 namespace Scaleplan\Templater;
 
-use PhpQuery\PhpQueryObject;
 use PhpQuery\PhpQuery;
-use function Scaleplan\Helpers\get_required_env;
+use PhpQuery\PhpQueryObject;
 use Scaleplan\Templater\Exceptions\DomElementNotFountException;
 use Scaleplan\Templater\Exceptions\FileNotFountException;
 use Scaleplan\Templater\Exceptions\FilePathNotSetException;
+use function Scaleplan\Helpers\get_required_env;
 
 /**
  * Шаблонизатор
@@ -18,13 +18,14 @@ use Scaleplan\Templater\Exceptions\FilePathNotSetException;
  */
 class Templater implements TemplaterInterface
 {
-    public const ATTR_HTML            = 'html';
-    public const ATTR_CLASS           = 'class';
-    public const ATTR_TEXT            = 'text';
-    public const ATTR_VAL             = 'val';
-    public const ATTR_VALUE           = 'value';
-    public const ATTR_HREF            = 'href';
-    public const ATTR_DATA_HREF       = 'data-href';
+    public const ATTR_HTML      = 'html';
+    public const ATTR_CLASS     = 'class';
+    public const ATTR_TEXT      = 'text';
+    public const ATTR_VAL       = 'val';
+    public const ATTR_VALUE     = 'value';
+    public const ATTR_HREF      = 'href';
+    public const ATTR_DATA_HREF = 'data-href';
+    public const ATTR_ACTION    = 'action';
 
     /**
      * @var array
@@ -157,7 +158,7 @@ class Templater implements TemplaterInterface
         $this->getTemplate()->find("[$this->includesAttribute]")->each(function ($element)
         use ($privateViewsPath, $publicViewsPath) {
             $element = PhpQuery::pq($element);
-            $paths = explode(', ', $element->attr($this->includesAttribute));
+            $paths = array_map('trim', explode(',', $element->attr($this->includesAttribute)));
             $includeTypes = explode(', ', $element->attr($this->includesTypesAttribute));
             $includeType = $includeTypes[0] ?: $this->defaultIncludeType;
             foreach ($paths as $index => $path) {
@@ -165,10 +166,15 @@ class Templater implements TemplaterInterface
                 $tplPath = file_exists($privateViewsPath . '/' . $path)
                     ? $privateViewsPath . '/' . $path
                     : $publicViewsPath . '/' . $path;
-                $includeType = $includeTypes[$index] ?: $includeType;
+                if (!empty($includeTypes[$index])) {
+                    $includeType = $includeTypes[$index];
+                }
+
                 switch ($includeType) {
                     case 'prepend':
                     case 'append':
+                    case 'after':
+                    case 'before':
                         $element->$includeType(file_get_contents($tplPath));
                         break;
 
@@ -254,7 +260,7 @@ class Templater implements TemplaterInterface
             $data = [$data];
         }
 
-        $parent->find('[data-depends-on]')->each(function($element) use ($data) {
+        $parent->find('[data-depends-on]')->each(function ($element) use ($data) {
             $element = PhpQuery::pq($element);
             $this->dataDependsCheck($data[0], $element);
         });
@@ -358,11 +364,18 @@ class Templater implements TemplaterInterface
         }
 
         if ($this->isInsertable([static::ATTR_HREF,], $matches)) {
-            $element->attr('href', str_replace("{{$key}}", $value, $element->attr(static::ATTR_HREF)));
+            $element->attr(static::ATTR_HREF, str_replace("{{$key}}", $value, $element->attr(static::ATTR_HREF)));
+        }
+
+        if ($this->isInsertable([static::ATTR_ACTION,], $matches)) {
+            $element->attr(static::ATTR_ACTION, str_replace("{{$key}}", $value, $element->attr(static::ATTR_ACTION)));
         }
 
         if ($this->isInsertable([static::ATTR_DATA_HREF,], $matches)) {
-            $element->attr('data-href', str_replace("{{$key}}", $value, $element->attr(static::ATTR_DATA_HREF)));
+            $element->attr(
+                static::ATTR_DATA_HREF,
+                str_replace("{{$key}}", $value, $element->attr(static::ATTR_DATA_HREF))
+            );
         }
 
         if ($this->isInsertable([static::ATTR_VAL, static::ATTR_VALUE,], $matches)) {
