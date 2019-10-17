@@ -7,6 +7,7 @@ use PhpQuery\PhpQueryObject;
 use Scaleplan\Templater\Exceptions\DomElementNotFountException;
 use Scaleplan\Templater\Exceptions\FileNotFountException;
 use Scaleplan\Templater\Exceptions\FilePathNotSetException;
+use Scaleplan\Templater\Exceptions\TemplaterException;
 use function Scaleplan\Helpers\get_required_env;
 
 /**
@@ -105,6 +106,16 @@ class Templater implements TemplaterInterface
     protected $dataInAttribute = 'data-in';
 
     /**
+     * @var string
+     */
+    protected $userRole;
+
+    /**
+     * @var string
+     */
+    protected $dataDependsOnAttribute = 'data-depends-on';
+
+    /**
      * Конструктор
      *
      * @param string $tplPath - имя файла шаблона
@@ -114,6 +125,14 @@ class Templater implements TemplaterInterface
     {
         $this->templatePath = $tplPath;
         $this->init($settings);
+    }
+
+    /**
+     * @param string $userRole
+     */
+    public function setUserRole(string $userRole) : void
+    {
+        $this->userRole = $userRole;
     }
 
     /**
@@ -133,13 +152,15 @@ class Templater implements TemplaterInterface
     }
 
     /**
-     * Импортирования компоненты представления
+     * @param string $path
+     * @param string|null $userRole
      *
-     * @throws \PhpQuery\Exceptions\PhpQueryException
+     * @return string
+     *
+     * @throws TemplaterException
      * @throws \Scaleplan\Helpers\Exceptions\EnvNotFoundException
-     * @throws \Exception
      */
-    public function renderIncludes() : void
+    public static function getTplPath(string $path, string $userRole = null) : string
     {
         static $privateViewsPath, $publicViewsPath;
         if (!$privateViewsPath) {
@@ -155,17 +176,46 @@ class Templater implements TemplaterInterface
                 . '/' . $locale;
         }
 
-        $this->getTemplate()->find("[$this->includesAttribute]")->each(function ($element)
-        use ($privateViewsPath, $publicViewsPath) {
+        $filePath = "$path.html";
+
+        $pathArray = explode('/', $path);
+        $tplName = array_pop($pathArray);
+        $fileDirectory = implode('/', $pathArray);
+        $roleFilePath = "$fileDirectory/$userRole-$tplName.html";
+
+        $tplPath = file_exists($privateViewsPath . '/' . $roleFilePath)
+            ? $privateViewsPath . '/' . $roleFilePath
+            : $publicViewsPath . '/' . $roleFilePath;
+
+        if (!file_exists($tplPath)) {
+            $tplPath = file_exists($privateViewsPath . '/' . $filePath)
+                ? $privateViewsPath . '/' . $filePath
+                : $publicViewsPath . '/' . $filePath;
+        }
+
+        if (!file_exists($tplPath)) {
+            throw new TemplaterException('Файл шаблона не существует.');
+        }
+
+        return $tplPath;
+    }
+
+    /**
+     * Импортирования компоненты представления
+     *
+     * @throws \PhpQuery\Exceptions\PhpQueryException
+     * @throws \Exception
+     */
+    public function renderIncludes() : void
+    {
+        $this->getTemplate()->find("[$this->includesAttribute]")->each(function ($element) {
             $element = PhpQuery::pq($element);
             $paths = array_map('trim', explode(',', $element->attr($this->includesAttribute)));
             $includeTypes = explode(', ', $element->attr($this->includesTypesAttribute));
             $includeType = $includeTypes[0] ?: $this->defaultIncludeType;
             foreach ($paths as $index => $path) {
-                $path = "$path.html";
-                $tplPath = file_exists($privateViewsPath . '/' . $path)
-                    ? $privateViewsPath . '/' . $path
-                    : $publicViewsPath . '/' . $path;
+                $tplPath = static::getTplPath($path, $this->userRole);
+
                 if (!empty($includeTypes[$index])) {
                     $includeType = $includeTypes[$index];
                 }
@@ -260,7 +310,7 @@ class Templater implements TemplaterInterface
             $data = [$data];
         }
 
-        $parent->find('[data-depends-on]')->each(function ($element) use ($data) {
+        $parent->find("[{$this->dataDependsOnAttribute}]")->each(function ($element) use ($data) {
             $element = PhpQuery::pq($element);
             $this->dataDependsCheck($data[0], $element);
         });
@@ -453,27 +503,27 @@ class Templater implements TemplaterInterface
     protected function dataDependsCheck(array $data, PhpQueryObject $element, string $key = null) : bool
     {
         if (null !== $key) {
-            $data = $data[$key];
-        }
-
-        if ($element->is('[data-depends-on]')) {
-            $dependsParent = $element;
+            $checkValue = $data[$key] ?? null;
         } else {
-            $dependsParent = $element->parents('[data-depends-on]');
+            $checkValue = $data;
         }
 
-        if (!$dependsParent->count()) {
+        if ($element->is("[{$this->dataDependsOnAttribute}]")) {
+            $dependsParents = $element;
+        } else {
+            $dependsParents = $element->parents("[{$this->dataDependsOnAttribute}]")
+                ->filter(function ($parent) use ($element) {
+                    $parent = PhpQuery::pq($parent);
+                    return $element->is($parent->attr($this->dataDependsOnAttribute));
+                });
+        }
+
+        if (!$dependsParents->count()) {
             return true;
         }
 
-        $dependsKey = $dependsParent->attr('data-depends-on');
-        if (\is_array($data) && !array_key_exists($dependsKey, $data)) {
-            $dependsParent->remove();
-            return false;
-        }
-
-        if ($dependsKey === $key) {
-            $dependsParent->addClass($this->noDisplayClass);
+        if (!$checkValue) {
+            $dependsParents->addClass($this->noDisplayClass);
             return false;
         }
 
@@ -505,5 +555,4 @@ class Templater implements TemplaterInterface
 
         return true;
     }
-
 }
