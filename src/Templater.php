@@ -387,13 +387,13 @@ class Templater implements TemplaterInterface
      *
      * @param PhpQueryObject $element
      * @param string $key - имя элемента для вставки
-     * @param string $value - значение для вставки
+     * @param $value - значение для вставки
      *
      * @return PhpQueryObject
      *
      * @throws \PhpQuery\Exceptions\PhpQueryException
      */
-    protected function modifyElement(&$element, string &$key, ?string &$value) : PhpQueryObject
+    protected function modifyElement(PhpQueryObject $element, string &$key, &$value) : PhpQueryObject
     {
         $matches = array_map('trim', explode(',', (string)$element->attr("{$this->dataInAttribute}-$key")));
 
@@ -465,10 +465,6 @@ class Templater implements TemplaterInterface
         }
 
         foreach ($data AS $key => $value) {
-            if (!$this->dataDependsCheck($data, $parent, $key)) {
-                return $parent;
-            }
-
             if ($generateMustache) {
                 $value = "{{$key}}";
             }
@@ -482,6 +478,10 @@ class Templater implements TemplaterInterface
 
             $parent->find("[{$this->dataInAttribute}-$key]")->each(function ($element) use ($key, $value) {
                 $element = PhpQuery::pq($element);
+                if (!$this->dataDependsCheck($value, $element)) {
+                    return;
+                }
+
                 $this->modifyElement($element, $key, $value);
             });
         }
@@ -492,20 +492,17 @@ class Templater implements TemplaterInterface
     /**
      * Если данных нет, то прячет зависимые от этих данных элементы
      *
-     * @param array $data
+     * @param $data
      * @param PhpQueryObject $element
-     * @param string|null $key
      *
      * @return bool
      *
      * @throws \PhpQuery\Exceptions\PhpQueryException
      */
-    protected function dataDependsCheck(array $data, PhpQueryObject $element, string $key = null) : bool
+    protected function dataDependsCheck($data, PhpQueryObject $element) : bool
     {
-        if (null !== $key) {
-            $checkValue = $data[$key] ?? null;
-        } else {
-            $checkValue = $data;
+        if ($data) {
+            return true;
         }
 
         if ($element->is("[{$this->dataDependsOnAttribute}]")) {
@@ -522,12 +519,9 @@ class Templater implements TemplaterInterface
             return true;
         }
 
-        if (!$checkValue) {
-            $dependsParents->addClass($this->noDisplayClass);
-            return false;
-        }
+        $dependsParents->addClass($this->noDisplayClass);
 
-        return true;
+        return false;
     }
 
     /**
@@ -540,15 +534,15 @@ class Templater implements TemplaterInterface
      *
      * @throws \PhpQuery\Exceptions\PhpQueryException
      */
-    protected function isShowNoData(array &$data, &$parent) : bool
+    protected function isShowNoData(array &$data, PhpQueryObject $parent) : bool
     {
         if (!$data) {
-            if (!($parent = $parent->parents($this->parentSelector))->count()
-                || !($noDataElement = $parent->children($this->noDataSelector))->count()) {
+            if (!($p = $parent->parents($this->parentSelector))->count()
+                || !($noDataElement = $p->children($this->noDataSelector))->count()) {
                 return true;
             }
 
-            $parent->children()->addClass($this->noDisplayClass);
+            $p->children()->addClass($this->noDisplayClass);
             $noDataElement->removeClass($this->noDisplayClass);
             return false;
         }
