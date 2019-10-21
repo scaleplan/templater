@@ -116,6 +116,11 @@ class Templater implements TemplaterInterface
     protected $dataDependsOnAttribute = 'data-depends-on';
 
     /**
+     * @var PhpQueryObject
+     */
+    protected $template;
+
+    /**
      * Конструктор
      *
      * @param string $tplPath - имя файла шаблона
@@ -268,8 +273,7 @@ class Templater implements TemplaterInterface
      */
     public function getTemplate() : PhpQueryObject
     {
-        static $template;
-        if (!$template) {
+        if (!$this->template) {
             if (!$this->templatePath) {
                 throw new FilePathNotSetException();
             }
@@ -278,10 +282,10 @@ class Templater implements TemplaterInterface
                 throw new FileNotFountException();
             }
 
-            $template = PhpQuery::newDocumentFileHTML($this->templatePath);
+            $this->template = PhpQuery::newDocumentFileHTML($this->templatePath);
         }
 
-        return $template;
+        return $this->template;
     }
 
     /**
