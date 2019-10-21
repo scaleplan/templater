@@ -306,14 +306,7 @@ class Templater implements TemplaterInterface
             return $parent->parent();
         }
 
-        if (empty($data[0])) {
-            $data = [$data];
-        }
-
-        $parent->find("[{$this->dataDependsOnAttribute}]")->each(function ($element) use ($data) {
-            $element = PhpQuery::pq($element);
-            $this->dataDependsCheck($data[0], $element);
-        });
+        $this->dataDependsCheck($data, $parent);
 
         if (!$parent->hasClass($this->cloneClassName)) {
             $this->setData($data, $parent);
