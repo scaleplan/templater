@@ -27,6 +27,7 @@ class Templater implements TemplaterInterface
     public const ATTR_HREF      = 'href';
     public const ATTR_DATA_HREF = 'data-href';
     public const ATTR_ACTION    = 'action';
+    public const ATTR_SRC       = 'src';
 
     /**
      * @var array
@@ -119,6 +120,16 @@ class Templater implements TemplaterInterface
      * @var PhpQueryObject
      */
     protected $template;
+
+    /**
+     * @var string
+     */
+    protected $defaultAttributePrefix = 'data-default-';
+
+    /**
+     * @var array
+     */
+    protected $currentDefaults = [];
 
     /**
      * Конструктор
@@ -340,6 +351,10 @@ class Templater implements TemplaterInterface
 
                 $filledTpl = urldecode($mustacheTpl);
                 foreach ($row as $field => $value) {
+                    if (null === $value || '' === $value) {
+                        $value = $this->currentDefaults[$field];
+                    }
+
                     $filledTpl = str_replace("{{$field}}", $value, $filledTpl);
                 }
 
@@ -396,6 +411,10 @@ class Templater implements TemplaterInterface
 
         if (!array_filter($matches)) {
             return $element;
+        }
+
+        if (null === $value || '' === $value) {
+            $value = $element->attr("{$this->defaultAttributePrefix}$key") ?? '';
         }
 
         if ($this->isInsertable([static::ATTR_HTML,], $matches)) {
@@ -461,8 +480,16 @@ class Templater implements TemplaterInterface
             $data = $data[0];
         }
 
+        if ($generateMustache) {
+            $this->currentDefaults = [];
+        }
+
         foreach ($data AS $key => $value) {
             if ($generateMustache) {
+                $attr = "{$this->defaultAttributePrefix}$key";
+                $this->currentDefaults[$key] = $parent
+                    ->find("[$attr]")
+                    ->attr($attr);
                 $value = "{{$key}}";
             }
 
