@@ -317,11 +317,11 @@ class Templater implements TemplaterInterface
             throw new DomElementNotFountException();
         }
 
+        $this->dataDependsCheck($data, $parent);
+
         if (!$this->isShowNoData($data, $parent)) {
             return $parent->parent();
         }
-
-        $this->dataDependsCheck($data, $parent);
 
         if (!$parent->hasClass($this->cloneClassName)) {
             $this->setData($data, $parent);
@@ -566,7 +566,7 @@ class Templater implements TemplaterInterface
                 return true;
             }
 
-            $p->children()->addClass($this->noDisplayClass);
+            //$p->children()->addClass($this->noDisplayClass);
             $noDataElement->removeClass($this->noDisplayClass);
             return false;
         }
