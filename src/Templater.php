@@ -300,6 +300,23 @@ class Templater implements TemplaterInterface
     }
 
     /**
+     * @param array $data
+     * @param $parent
+     *
+     * @return PhpQueryObject|null
+     *
+     * @throws \PhpQuery\Exceptions\PhpQueryException
+     */
+    public function setOptionalMultiData(array $data, $parent) : ?PhpQueryObject
+    {
+        try {
+            return $this->setMultiData($data, $parent);
+        } catch (DomElementNotFountException $e) {
+            return null;
+        }
+    }
+
+    /**
      * Вставить в шаблон несколько однородных записей (при этом на каждую запись создается копия DOM-объекта-родителя)
      *
      * @param array $data - данные для вставки
@@ -336,6 +353,7 @@ class Templater implements TemplaterInterface
      * @param PhpQueryObject $parent
      *
      * @return PhpQueryObject
+     *
      * @throws DomElementNotFountException
      * @throws \PhpQuery\Exceptions\PhpQueryException
      */
