@@ -330,8 +330,8 @@ class Templater implements TemplaterInterface
      */
     public function setMultiData(array $data, $parent) : PhpQueryObject
     {
-        if (\is_string($parent) && !($parent = $this->getTemplate()->find($parent))->count()) {
-            throw new DomElementNotFountException();
+        if (\is_string($parent) && ($selector = $parent) && !($parent = $this->getTemplate()->find($parent))->count()) {
+            throw new DomElementNotFountException($selector);
         }
 
         $this->dataDependsCheck($data, $parent);
@@ -488,8 +488,8 @@ class Templater implements TemplaterInterface
      */
     public function setData(array $data, &$parent, bool $generateMustache = false) : PhpQueryObject
     {
-        if (\is_string($parent) && !($parent = $this->getTemplate()->find($parent))->count()) {
-            throw new DomElementNotFountException();
+        if (\is_string($parent) && ($selector = $parent) && !($parent = $this->getTemplate()->find($parent))->count()) {
+            throw new DomElementNotFountException($selector);
         }
 
         $parent->removeClass($this->cloneClassName);
