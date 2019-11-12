@@ -584,8 +584,9 @@ class Templater implements TemplaterInterface
                 return true;
             }
 
-            //$p->children()->addClass($this->noDisplayClass);
-            $noDataElement->removeClass($this->noDisplayClass);
+            $noDataElement
+                ->removeClass($this->noDisplayClass)
+                ->siblings('*:not(.clone)')->addClass($this->noDisplayClass);
             return false;
         }
 
