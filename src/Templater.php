@@ -335,8 +335,9 @@ class Templater implements TemplaterInterface
         }
 
         $this->dataDependsCheck($data, $parent);
+        $this->isShowNoData($data, $parent);
 
-        if (!$this->isShowNoData($data, $parent)) {
+        if (!$data) {
             return $parent->parent();
         }
 
@@ -578,17 +579,21 @@ class Templater implements TemplaterInterface
      */
     protected function isShowNoData(array &$data, PhpQueryObject $parent) : bool
     {
-        if (!$data) {
-            if (!($p = $parent->parents($this->parentSelector))->count()
-                || !($noDataElement = $p->children($this->noDataSelector))->count()) {
-                return true;
-            }
+        if (!($p = $parent->parents($this->parentSelector))->count()
+            || !($noDataElement = $p->children($this->noDataSelector))->count()) {
+            return true;
+        }
 
+        if (!$data) {
             $noDataElement
                 ->removeClass($this->noDisplayClass)
                 ->siblings('*:not(.clone)')->addClass($this->noDisplayClass);
             return false;
         }
+
+        $noDataElement
+            ->addClass($this->noDisplayClass)
+            ->siblings('*:not(.clone)')->removeClass($this->noDisplayClass);
 
         return true;
     }
