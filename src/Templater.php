@@ -28,6 +28,8 @@ class Templater implements TemplaterInterface
     public const ATTR_DATA_HREF = 'data-href';
     public const ATTR_ACTION    = 'action';
     public const ATTR_SRC       = 'src';
+    public const ATTR_CHECKED   = 'checked';
+    public const ATTR_SELECTED  = 'selected';
 
     /**
      * @var array
@@ -290,7 +292,7 @@ class Templater implements TemplaterInterface
             }
 
             if (!file_exists($this->templatePath)) {
-                throw new FileNotFountException();
+                throw new FileNotFountException($this->templatePath);
             }
 
             $this->template = PhpQuery::newDocumentFileHTML($this->templatePath);
@@ -334,19 +336,25 @@ class Templater implements TemplaterInterface
             throw new DomElementNotFountException($selector);
         }
 
+        if (!$parent->count()) {
+            return $parent;
+        }
+
         $this->dataDependsCheck($data, $parent);
         $this->isShowNoData($data, $parent);
 
         if (!$data) {
-            return $parent->parent();
+            return $parent;
         }
 
         if (!$parent->hasClass($this->cloneClassName)) {
             $this->setData($data, $parent);
-            return $parent->parent();
+            return $parent;
         }
 
-        return $this->fillingMultiData($data, $parent);
+        $this->fillingMultiData($data, $parent);
+
+        return $parent;
     }
 
     /**
@@ -355,44 +363,46 @@ class Templater implements TemplaterInterface
      *
      * @return PhpQueryObject
      *
-     * @throws DomElementNotFountException
      * @throws \PhpQuery\Exceptions\PhpQueryException
      */
     protected function fillingMultiData(array $data, PhpQueryObject $parent) : PhpQueryObject
     {
-        $clone = $parent->clone();
-        if ($this->renderByMustache && count($data) > 1) {
-            $mustacheTpl = (string)$this->setData($data[0], $clone, true);
+        $parent->each(function ($element) use ($data) {
+            $element = PhpQuery::pq($element);
+            $clone = $element->clone();
+            if ($this->renderByMustache && count($data) > 1) {
+                $mustacheTpl = (string)$this->setData($data[0], $clone, true);
+                foreach ($data as $row) {
+                    if (!\is_array($row)) {
+                        continue;
+                    }
+
+                    $filledTpl = urldecode($mustacheTpl);
+                    foreach ($row as $field => $value) {
+                        if (null === $value || '' === $value) {
+                            $value = $this->currentDefaults[$field] ?? '';
+                        }
+
+                        $filledTpl = str_replace("{{$field}}", $value, $filledTpl);
+                    }
+
+                    $element->after($filledTpl);
+                }
+
+                return;
+            }
+
             foreach ($data as $row) {
                 if (!\is_array($row)) {
                     continue;
                 }
 
-                $filledTpl = urldecode($mustacheTpl);
-                foreach ($row as $field => $value) {
-                    if (null === $value || '' === $value) {
-                        $value = $this->currentDefaults[$field] ?? '';
-                    }
-
-                    $filledTpl = str_replace("{{$field}}", $value, $filledTpl);
-                }
-
-                $parent->after($filledTpl);
+                $element->after($clone);
+                $this->setData($row, $clone);
             }
+        });
 
-            return $parent->parent();
-        }
-
-        foreach ($data as $row) {
-            if (!\is_array($row)) {
-                continue;
-            }
-
-            $parent->after($clone);
-            $this->setData($row, $clone);
-        }
-
-        return $parent->parent();
+        return $parent;
     }
 
     /**
@@ -440,8 +450,12 @@ class Templater implements TemplaterInterface
             $element->html($value);
         }
 
+        if ($this->isInsertable([static::ATTR_HTML,], $matches)) {
+            $element->html($value);
+        }
+
         if ($this->isInsertable([static::ATTR_TEXT,], $matches)) {
-            $element->text($value);
+            $element->text(strip_tags($value));
         }
 
         if ($this->isInsertable([static::ATTR_CLASS,], $matches)) {
@@ -465,6 +479,22 @@ class Templater implements TemplaterInterface
 
         if ($this->isInsertable([static::ATTR_VAL, static::ATTR_VALUE,], $matches)) {
             $element->val($value);
+        }
+
+        if ($this->isInsertable([static::ATTR_CHECKED], $matches)) {
+            if ($value) {
+                $element->attr(static::ATTR_CHECKED, static::ATTR_CHECKED);
+            } else {
+                $element->removeAttr(static::ATTR_CHECKED);
+            }
+        }
+
+        if ($this->isInsertable([static::ATTR_SELECTED], $matches)) {
+            if ($value) {
+                $element->attr(static::ATTR_SELECTED, static::ATTR_SELECTED);
+            } else {
+                $element->removeAttr(static::ATTR_SELECTED);
+            }
         }
 
         foreach ($matches as $attr) {
