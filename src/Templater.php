@@ -371,7 +371,7 @@ class Templater implements TemplaterInterface
                 $filledTpl = urldecode($mustacheTpl);
                 foreach ($row as $field => $value) {
                     if (null === $value || '' === $value) {
-                        $value = $this->currentDefaults[$field];
+                        $value = $this->currentDefaults[$field] ?? '';
                     }
 
                     $filledTpl = str_replace("{{$field}}", $value, $filledTpl);
