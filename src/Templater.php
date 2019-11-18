@@ -302,6 +302,14 @@ class Templater implements TemplaterInterface
     }
 
     /**
+     * @param PhpQueryObject $template
+     */
+    public function setTemplate(PhpQueryObject $template) : void
+    {
+        $this->template = $template;
+    }
+
+    /**
      * @param array $data
      * @param $parent
      *
@@ -360,18 +368,13 @@ class Templater implements TemplaterInterface
     /**
      * @param array $data
      * @param PhpQueryObject $parent
-     *
-     * @return PhpQueryObject
-     *
-     * @throws \PhpQuery\Exceptions\PhpQueryException
      */
-    protected function fillingMultiData(array $data, PhpQueryObject $parent) : PhpQueryObject
+    protected function fillingMultiData(array $data, PhpQueryObject $parent) : void
     {
         $parent->each(function ($element) use ($data) {
             $element = PhpQuery::pq($element);
-            $clone = $element->clone();
             if ($this->renderByMustache && count($data) > 1) {
-                $mustacheTpl = (string)$this->setData($data[0], $clone, true);
+                $mustacheTpl = (string)$this->setData($data[0], $element->clone(), true);
                 foreach ($data as $row) {
                     if (!\is_array($row)) {
                         continue;
@@ -386,7 +389,9 @@ class Templater implements TemplaterInterface
                         $filledTpl = str_replace("{{$field}}", $value, $filledTpl);
                     }
 
+                    $filledTpl = PhpQuery::pq($filledTpl);
                     $element->after($filledTpl);
+                    $element = $filledTpl;
                 }
 
                 return;
@@ -397,12 +402,11 @@ class Templater implements TemplaterInterface
                     continue;
                 }
 
+                $clone = $this->setData($row, $element->clone());
                 $element->after($clone);
-                $this->setData($row, $clone);
+                $element = $clone;
             }
         });
-
-        return $parent;
     }
 
     /**
@@ -517,7 +521,7 @@ class Templater implements TemplaterInterface
      * @throws \PhpQuery\Exceptions\PhpQueryException
      * @throws \Exception
      */
-    public function setData(array $data, &$parent, bool $generateMustache = false) : PhpQueryObject
+    public function setData(array $data, $parent, bool $generateMustache = false) : PhpQueryObject
     {
         if (\is_string($parent) && ($selector = $parent) && !($parent = $this->getTemplate()->find($parent))->count()) {
             throw new DomElementNotFountException($selector);

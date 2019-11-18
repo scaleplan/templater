@@ -60,5 +60,5 @@ interface TemplaterInterface
      *
      * @throws DomElementNotFountException
      */
-    public function setData(array $data, &$parent) : PhpQueryObject;
+    public function setData(array $data, $parent) : PhpQueryObject;
 }
