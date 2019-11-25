@@ -454,35 +454,12 @@ class Templater implements TemplaterInterface
             $element->html($value);
         }
 
-        if ($this->isInsertable([static::ATTR_HTML,], $matches)) {
-            $element->html($value);
-        }
-
         if ($this->isInsertable([static::ATTR_TEXT,], $matches)) {
             $element->text(strip_tags($value));
         }
 
         if ($this->isInsertable([static::ATTR_CLASS,], $matches)) {
             $element->addClass($value);
-        }
-
-        if ($this->isInsertable([static::ATTR_HREF,], $matches)) {
-            $element->attr(static::ATTR_HREF, str_replace("{{$key}}", $value, $element->attr(static::ATTR_HREF)));
-        }
-
-        if ($this->isInsertable([static::ATTR_ACTION,], $matches)) {
-            $element->attr(static::ATTR_ACTION, str_replace("{{$key}}", $value, $element->attr(static::ATTR_ACTION)));
-        }
-
-        if ($this->isInsertable([static::ATTR_DATA_HREF,], $matches)) {
-            $element->attr(
-                static::ATTR_DATA_HREF,
-                str_replace("{{$key}}", $value, $element->attr(static::ATTR_DATA_HREF))
-            );
-        }
-
-        if ($this->isInsertable([static::ATTR_VAL, static::ATTR_VALUE,], $matches)) {
-            $element->val($value);
         }
 
         if ($this->isInsertable([static::ATTR_CHECKED], $matches)) {
@@ -502,6 +479,12 @@ class Templater implements TemplaterInterface
         }
 
         foreach ($matches as $attr) {
+            $attrValue = $element->attr($attr);
+            if ($attrValue && strpos($attrValue, "{{$key}}") !== false) {
+                $element->attr($attr, str_replace("{{$key}}", $value, $attrValue));
+                continue;
+            }
+
             $element->attr($attr, $value);
         }
 
