@@ -386,6 +386,11 @@ class Templater implements TemplaterInterface
                             $value = $this->currentDefaults[$field] ?? '';
                         }
 
+                        if (\is_array($value)) {
+                            $this->setMultiData($value, $element->find(".$field{$this->subparentSelector}"));
+                            continue;
+                        }
+
                         $filledTpl = str_replace("{{$field}}", $value, $filledTpl);
                     }
 
