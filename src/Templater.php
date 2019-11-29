@@ -374,20 +374,27 @@ class Templater implements TemplaterInterface
         $parent->each(function ($element) use ($data) {
             $element = PhpQuery::pq($element);
             if ($this->renderByMustache && count($data) > 1) {
-                $mustacheTpl = (string)$this->setData($data[0], $element->clone(), true);
+                $mustacheTpl = $this->setData($data[0], $element->clone(), true);
                 foreach ($data as $row) {
                     if (!\is_array($row)) {
                         continue;
                     }
 
-                    $filledTpl = urldecode($mustacheTpl);
+                    $filledTpl = urldecode((string)$mustacheTpl);
                     foreach ($row as $field => $value) {
                         if (null === $value || '' === $value) {
                             $value = $this->currentDefaults[$field] ?? '';
                         }
 
                         if (\is_array($value)) {
-                            $this->setMultiData($value, $element->find(".$field{$this->subparentSelector}"));
+                            $filledTpl = PhpQuery::pq($filledTpl);
+                            $this->setMultiData($value, $filledTpl->find(".$field{$this->subparentSelector}"));
+//                            $filledTpl->find()->each(function ($subparent) use (&$value, &$filledTpl) {
+//                                $subparent = PhpQuery::pq($subparent);
+//                                $newTpl = $this->setMultiData($value, $subparent);
+//                                $filledTpl = str_replace((string)$subparent, (string)$newTpl, urldecode((string)$filledTpl));
+//                            });
+                            $filledTpl = urldecode((string)$filledTpl);
                             continue;
                         }
 
