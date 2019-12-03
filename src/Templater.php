@@ -161,7 +161,7 @@ class Templater implements TemplaterInterface
     public function init(array $settings) : void
     {
         foreach ($settings as $setting => $value) {
-            if (isset($this->{$setting})) {
+            if (property_exists($this, $setting)) {
                 $this->{$setting} = $value;
             }
         }
