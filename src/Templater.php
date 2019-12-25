@@ -212,7 +212,7 @@ class Templater implements TemplaterInterface
         }
 
         if (!file_exists($tplPath)) {
-            throw new TemplaterException('Файл шаблона не существует.');
+            throw new TemplaterException("Файл шаблона '$tplPath' не существует.");
         }
 
         return $tplPath;
@@ -442,65 +442,67 @@ class Templater implements TemplaterInterface
     /**
      * Заполнение элемента данными
      *
-     * @param PhpQueryObject $element
+     * @param PhpQueryObject $elements
      * @param string $key - имя элемента для вставки
      * @param $value - значение для вставки
      *
      * @return PhpQueryObject
-     *
-     * @throws \PhpQuery\Exceptions\PhpQueryException
      */
-    protected function modifyElement(PhpQueryObject $element, string &$key, &$value) : PhpQueryObject
+    protected function modifyElement(PhpQueryObject $elements, string &$key, &$value) : PhpQueryObject
     {
-        $matches = array_map('trim', explode(',', (string)$element->attr("{$this->dataInAttribute}-$key")));
+        $elements->each(function ($element) use ($key, $value) {
 
-        if (!array_filter($matches)) {
-            return $element;
-        }
+            $element = PhpQuery::pq($element);
+            $matches = array_map('trim', explode(',', (string)$element->attr("{$this->dataInAttribute}-$key")));
 
-        if (null === $value || '' === $value) {
-            $value = $element->attr("{$this->defaultAttributePrefix}$key") ?? '';
-        }
-
-        if ($this->isInsertable([static::ATTR_HTML,], $matches)) {
-            $element->html($value);
-        }
-
-        if ($this->isInsertable([static::ATTR_TEXT,], $matches)) {
-            $element->text(strip_tags($value));
-        }
-
-        if ($this->isInsertable([static::ATTR_CLASS,], $matches)) {
-            $element->addClass($value);
-        }
-
-        if ($this->isInsertable([static::ATTR_CHECKED], $matches)) {
-            if ($value) {
-                $element->attr(static::ATTR_CHECKED, static::ATTR_CHECKED);
-            } else {
-                $element->removeAttr(static::ATTR_CHECKED);
-            }
-        }
-
-        if ($this->isInsertable([static::ATTR_SELECTED], $matches)) {
-            if ($value) {
-                $element->attr(static::ATTR_SELECTED, static::ATTR_SELECTED);
-            } else {
-                $element->removeAttr(static::ATTR_SELECTED);
-            }
-        }
-
-        foreach ($matches as $attr) {
-            $attrValue = $element->attr($attr);
-            if ($attrValue && strpos($attrValue, "{{$key}}") !== false) {
-                $element->attr($attr, str_replace("{{$key}}", $value, $attrValue));
-                continue;
+            if (!array_filter($matches)) {
+                return $element;
             }
 
-            $element->attr($attr, $value);
-        }
+            if (null === $value || '' === $value) {
+                $value = $element->attr("{$this->defaultAttributePrefix}$key") ?? '';
+            }
 
-        return $element;
+            if ($this->isInsertable([static::ATTR_HTML,], $matches)) {
+                $element->html($value);
+            }
+
+            if ($this->isInsertable([static::ATTR_TEXT,], $matches)) {
+                $element->text(strip_tags($value));
+            }
+
+            if ($this->isInsertable([static::ATTR_CLASS,], $matches)) {
+                $element->addClass($value);
+            }
+
+            if ($this->isInsertable([static::ATTR_CHECKED], $matches)) {
+                if ($value) {
+                    $element->attr(static::ATTR_CHECKED, static::ATTR_CHECKED);
+                } else {
+                    $element->removeAttr(static::ATTR_CHECKED);
+                }
+            }
+
+            if ($this->isInsertable([static::ATTR_SELECTED], $matches)) {
+                if ($value) {
+                    $element->attr(static::ATTR_SELECTED, static::ATTR_SELECTED);
+                } else {
+                    $element->removeAttr(static::ATTR_SELECTED);
+                }
+            }
+
+            foreach ($matches as $attr) {
+                $attrValue = $element->attr($attr);
+                if ($attrValue && strpos($attrValue, "{{$key}}") !== false) {
+                    $element->attr($attr, str_replace("{{$key}}", $value, $attrValue));
+                    continue;
+                }
+
+                $element->attr($attr, $value);
+            }
+        });
+
+        return $elements;
     }
 
     /**
