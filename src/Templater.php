@@ -182,7 +182,8 @@ class Templater implements TemplaterInterface
     {
         static $privateViewsPath, $publicViewsPath;
         if (!$privateViewsPath) {
-            $locale = locale_accept_from_http($_SERVER['HTTP_ACCEPT_LANGUAGE']) ?: get_required_env('DEFAULT_LANG');
+            $locale = \Locale::acceptFromHttp((string)($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''))
+                ?: get_required_env('DEFAULT_LANG');
             $privateViewsPath = get_required_env('BUNDLE_PATH')
                 . get_required_env('VIEWS_PATH')
                 . get_required_env('PRIVATE_TEMPLATES_PATH')
@@ -575,7 +576,7 @@ class Templater implements TemplaterInterface
      */
     protected function dataDependsCheck($data, PhpQueryObject $element) : bool
     {
-        if ($data) {
+        if (null !== $data) {
             return true;
         }
 
