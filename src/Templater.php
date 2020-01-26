@@ -220,6 +220,97 @@ class Templater implements TemplaterInterface
     }
 
     /**
+     * @param string|PhpQueryObject $selectorOrElement
+     *
+     * @return array
+     *
+     * @throws DomElementNotFountException
+     * @throws \PhpQuery\Exceptions\PhpQueryException
+     * @throws \Exception
+     */
+    public function getIncludes(&$selectorOrElement) : array
+    {
+        if (!($selectorOrElement instanceof PhpQueryObject)) {
+            $selectorOrElement = $this->getTemplate()->find($selectorOrElement);
+        }
+
+        if (!$selectorOrElement->count()) {
+            throw new DomElementNotFountException();
+        }
+
+        return [
+            array_filter(array_map('trim', explode(',', $selectorOrElement->attr($this->includesAttribute)))),
+            array_filter(array_map('trim', explode(',', $selectorOrElement->attr($this->includesTypesAttribute)))),
+        ];
+    }
+
+    /**
+     * @param $selectorOrElement
+     * @param array $includes
+     *
+     * @param array $includesTypes
+     *
+     * @throws DomElementNotFountException
+     * @throws \PhpQuery\Exceptions\PhpQueryException
+     * @throws \Exception
+     */
+    public function setIncludes(&$selectorOrElement, array $includes, array $includesTypes) : void
+    {
+        if (!($selectorOrElement instanceof PhpQueryObject)) {
+            $selectorOrElement = $this->getTemplate()->find($selectorOrElement);
+        }
+
+        if (!$selectorOrElement->count()) {
+            throw new DomElementNotFountException();
+        }
+
+        $selectorOrElement->attr($this->includesAttribute, implode(',', $includes));
+        $selectorOrElement->attr($this->includesTypesAttribute, implode(',', $includesTypes));
+    }
+
+    /**
+     * @param $selectorOrElement
+     * @param array $includes
+     *
+     * @param array $includesTypes
+     *
+     * @throws DomElementNotFountException
+     * @throws \PhpQuery\Exceptions\PhpQueryException
+     */
+    public function addIncludes(&$selectorOrElement, array $includes, array $includesTypes) : void
+    {
+        [$presentIncludes, $presentIncludesTypes] = $this->getIncludes($selectorOrElement);
+        $this->setIncludes(
+            $selectorOrElement,
+            array_merge($presentIncludes, $includes),
+            array_merge($presentIncludesTypes, $includesTypes)
+        );
+    }
+
+    /**
+     * @param $selectorOrElement
+     * @param array $toRemove
+     *
+     * @throws DomElementNotFountException
+     * @throws \PhpQuery\Exceptions\PhpQueryException
+     */
+    public function removeIncludes(&$selectorOrElement, array $toRemove) : void
+    {
+        [$presentIncludes, $presentIncludesTypes] = $this->getIncludes($selectorOrElement);
+        $newIncludes = $presentIncludes;
+        $newIncludesTypes = $presentIncludesTypes;
+        foreach ($toRemove as $toRemoveInclude) {
+            if (false === ($index = array_search($toRemoveInclude, $presentIncludes))) {
+                continue;
+            }
+
+            unset($newIncludes[$index], $newIncludesTypes[$index]);
+        }
+
+        $this->setIncludes($selectorOrElement, $newIncludes, $newIncludesTypes);
+    }
+
+    /**
      * Импортирования компоненты представления
      *
      * @throws \PhpQuery\Exceptions\PhpQueryException
@@ -229,7 +320,7 @@ class Templater implements TemplaterInterface
     {
         $this->getTemplate()->find("[$this->includesAttribute]")->each(function ($element) {
             $element = PhpQuery::pq($element);
-            $paths = array_map('trim', explode(',', $element->attr($this->includesAttribute)));
+            $paths = array_filter(array_map('trim', explode(',', $element->attr($this->includesAttribute))));
             $includeTypes = explode(', ', $element->attr($this->includesTypesAttribute));
             $includeType = $includeTypes[0] ?: $this->defaultIncludeType;
             foreach ($paths as $index => $path) {
@@ -454,9 +545,12 @@ class Templater implements TemplaterInterface
         $elements->each(function ($element) use ($key, $value) {
 
             $element = PhpQuery::pq($element);
-            $matches = array_map('trim', explode(',', (string)$element->attr("{$this->dataInAttribute}-$key")));
+            $matches = array_filter(array_map('trim', explode(
+                ',',
+                (string)$element->attr("{$this->dataInAttribute}-$key")
+            )));
 
-            if (!array_filter($matches)) {
+            if (!$matches) {
                 return $element;
             }
 
@@ -501,6 +595,8 @@ class Templater implements TemplaterInterface
 
                 $element->attr($attr, $value);
             }
+
+            return $element;
         });
 
         return $elements;
@@ -576,7 +672,7 @@ class Templater implements TemplaterInterface
      */
     protected function dataDependsCheck($data, PhpQueryObject $element) : bool
     {
-        if (null !== $data) {
+        if (null !== $data && (!is_array($data) || (is_array($data) && [] !== $data))) {
             return true;
         }
 
