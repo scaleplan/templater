@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Scaleplan\Templater;
 
@@ -30,6 +31,13 @@ class Templater implements TemplaterInterface
     public const ATTR_SRC       = 'src';
     public const ATTR_CHECKED   = 'checked';
     public const ATTR_SELECTED  = 'selected';
+
+    public const INCLUDE_TYPE_PREPEND = 'prepend';
+    public const INCLUDE_TYPE_APPEND  = 'append';
+    public const INCLUDE_TYPE_AFTER   = 'after';
+    public const INCLUDE_TYPE_BEFORE  = 'before';
+    public const INCLUDE_TYPE_INSTEAD = 'instead';
+    public const INCLUDE_TYPE_INTO    = 'into';
 
     /**
      * @var array
@@ -228,7 +236,7 @@ class Templater implements TemplaterInterface
      * @throws \PhpQuery\Exceptions\PhpQueryException
      * @throws \Exception
      */
-    public function getIncludes(&$selectorOrElement) : array
+    public function getIncludes($selectorOrElement) : array
     {
         if (!($selectorOrElement instanceof PhpQueryObject)) {
             $selectorOrElement = $this->getTemplate()->find($selectorOrElement);
@@ -239,8 +247,8 @@ class Templater implements TemplaterInterface
         }
 
         return [
-            array_filter(array_map('trim', explode(',', $selectorOrElement->attr($this->includesAttribute)))),
-            array_filter(array_map('trim', explode(',', $selectorOrElement->attr($this->includesTypesAttribute)))),
+            array_filter(array_map('trim', explode(',', $selectorOrElement->attr($this->includesAttribute) ?? ''))),
+            array_filter(array_map('trim', explode(',', $selectorOrElement->attr($this->includesTypesAttribute) ?? ''))),
         ];
     }
 
@@ -254,7 +262,7 @@ class Templater implements TemplaterInterface
      * @throws \PhpQuery\Exceptions\PhpQueryException
      * @throws \Exception
      */
-    public function setIncludes(&$selectorOrElement, array $includes, array $includesTypes) : void
+    public function setIncludes($selectorOrElement, array $includes, array $includesTypes) : void
     {
         if (!($selectorOrElement instanceof PhpQueryObject)) {
             $selectorOrElement = $this->getTemplate()->find($selectorOrElement);
@@ -277,7 +285,7 @@ class Templater implements TemplaterInterface
      * @throws DomElementNotFountException
      * @throws \PhpQuery\Exceptions\PhpQueryException
      */
-    public function addIncludes(&$selectorOrElement, array $includes, array $includesTypes) : void
+    public function addIncludes($selectorOrElement, array $includes, array $includesTypes) : void
     {
         [$presentIncludes, $presentIncludesTypes] = $this->getIncludes($selectorOrElement);
         $this->setIncludes(
@@ -294,7 +302,7 @@ class Templater implements TemplaterInterface
      * @throws DomElementNotFountException
      * @throws \PhpQuery\Exceptions\PhpQueryException
      */
-    public function removeIncludes(&$selectorOrElement, array $toRemove) : void
+    public function removeIncludes($selectorOrElement, array $toRemove) : void
     {
         [$presentIncludes, $presentIncludesTypes] = $this->getIncludes($selectorOrElement);
         $newIncludes = $presentIncludes;
@@ -331,18 +339,18 @@ class Templater implements TemplaterInterface
                 }
 
                 switch ($includeType) {
-                    case 'prepend':
-                    case 'append':
-                    case 'after':
-                    case 'before':
+                    case static::INCLUDE_TYPE_PREPEND:
+                    case static::INCLUDE_TYPE_APPEND:
+                    case static::INCLUDE_TYPE_AFTER:
+                    case static::INCLUDE_TYPE_BEFORE:
                         $element->$includeType(file_get_contents($tplPath));
                         break;
 
-                    case 'instead':
+                    case static::INCLUDE_TYPE_INSTEAD:
                         $element->replaceWith(file_get_contents($tplPath));
                         break;
 
-                    case 'into':
+                    case static::INCLUDE_TYPE_INTO:
                         $element->html(file_get_contents($tplPath));
                         break;
                 }
@@ -563,7 +571,7 @@ class Templater implements TemplaterInterface
             }
 
             if ($this->isInsertable([static::ATTR_TEXT,], $matches)) {
-                $element->text(strip_tags($value));
+                $element->text(is_string($value) ? strip_tags($value) : $value);
             }
 
             if ($this->isInsertable([static::ATTR_CLASS,], $matches)) {
