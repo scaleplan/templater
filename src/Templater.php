@@ -329,7 +329,7 @@ class Templater implements TemplaterInterface
         $this->getTemplate()->find("[$this->includesAttribute]")->each(function ($element) {
             $element = PhpQuery::pq($element);
             $paths = array_filter(array_map('trim', explode(',', $element->attr($this->includesAttribute))));
-            $includeTypes = explode(', ', $element->attr($this->includesTypesAttribute));
+            $includeTypes = array_filter(array_map('trim', explode(',', $element->attr($this->includesTypesAttribute))));
             $includeType = $includeTypes[0] ?: $this->defaultIncludeType;
             foreach ($paths as $index => $path) {
                 $tplPath = static::getTplPath($path, $this->userRole);
@@ -354,10 +354,10 @@ class Templater implements TemplaterInterface
                         $element->html(file_get_contents($tplPath));
                         break;
                 }
-
-                $element->removeAttr($this->includesAttribute);
-                $element->removeAttr($this->includesTypesAttribute);
             }
+
+            $element->removeAttr($this->includesAttribute);
+            $element->removeAttr($this->includesTypesAttribute);
         });
     }
 
