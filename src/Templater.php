@@ -308,7 +308,7 @@ class Templater implements TemplaterInterface
         $newIncludes = $presentIncludes;
         $newIncludesTypes = $presentIncludesTypes;
         foreach ($toRemove as $toRemoveInclude) {
-            if (false === ($index = array_search($toRemoveInclude, $presentIncludes))) {
+            if (false === ($index = array_search($toRemoveInclude, $presentIncludes, true))) {
                 continue;
             }
 
