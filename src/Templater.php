@@ -533,16 +533,15 @@ class Templater implements TemplaterInterface
      * @param array $labels - метка
      * @param array $matches - массив совпадений
      *
-     * @return bool
+     * @return array
      */
-    protected function isInsertable(array $labels, array &$matches) : bool
+    protected function isInsertable(array $labels, array &$matches) : array
     {
-        if (array_intersect($labels, $matches)) {
-            $matches = array_diff($matches, $labels);
-            return true;
+        if ($existedLabels = array_intersect($labels, $matches)) {
+            return [array_diff($matches, $labels), $existedLabels];
         }
 
-        return false;
+        return [$matches, []];
     }
 
     /**
@@ -572,19 +571,19 @@ class Templater implements TemplaterInterface
                 $value = $element->attr("{$this->defaultAttributePrefix}$key") ?? '';
             }
 
-            if ($this->isInsertable([static::ATTR_HTML,], $matches)) {
+            if ($this->isInsertable([static::ATTR_HTML,], $matches)[1]) {
                 $element->html($value);
             }
 
-            if ($this->isInsertable([static::ATTR_TEXT,], $matches)) {
+            if ($this->isInsertable([static::ATTR_TEXT,], $matches)[1]) {
                 $element->text(is_string($value) ? strip_tags($value) : $value);
             }
 
-            if ($this->isInsertable([static::ATTR_CLASS,], $matches)) {
+            if ($this->isInsertable([static::ATTR_CLASS,], $matches)[1]) {
                 $element->addClass($value);
             }
 
-            if ($this->isInsertable([static::ATTR_CHECKED], $matches)) {
+            if ($this->isInsertable([static::ATTR_CHECKED], $matches)[1]) {
                 if ($value) {
                     $element->attr(static::ATTR_CHECKED, static::ATTR_CHECKED);
                 } else {
@@ -592,7 +591,7 @@ class Templater implements TemplaterInterface
                 }
             }
 
-            if ($this->isInsertable([static::ATTR_SELECTED], $matches)) {
+            if ($this->isInsertable([static::ATTR_SELECTED], $matches)[1]) {
                 if ($value) {
                     $element->attr(static::ATTR_SELECTED, static::ATTR_SELECTED);
                 } else {
