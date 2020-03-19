@@ -646,10 +646,10 @@ class Templater implements TemplaterInterface
 
         foreach ($data AS $key => $value) {
             if ($generateMustache) {
-                $attr = "{$this->defaultAttributePrefix}$key";
+                $defaultAttr = "{$this->defaultAttributePrefix}$key";
                 $this->currentDefaults[$key] = $parent
-                    ->find("[$attr]")
-                    ->attr($attr);
+                    ->find("[$defaultAttr]")
+                    ->attr($defaultAttr);
                 $value = "{{$key}}";
             }
 
@@ -660,9 +660,10 @@ class Templater implements TemplaterInterface
 
             $this->modifyElement($parent, $key, $value);
 
-            $parent->find("[{$this->dataInAttribute}-$key]")->each(function ($element) use ($key, $value) {
+            $parent->find("[{$this->dataInAttribute}-$key]")->each(function ($element)
+            use ($key, $value, $generateMustache) {
                 $element = PhpQuery::pq($element);
-                if (!$this->dataDependsCheck($value, $element)) {
+                if (!$generateMustache && !$this->dataDependsCheck($value, $element)) {
                     return;
                 }
 
