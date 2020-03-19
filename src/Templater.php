@@ -538,7 +538,7 @@ class Templater implements TemplaterInterface
     protected function isInsertable(array $labels, array &$matches) : array
     {
         if ($existedLabels = array_intersect($labels, $matches)) {
-            return [array_diff($matches, $labels), $existedLabels];
+            return [$matches = array_diff($matches, $labels), $existedLabels];
         }
 
         return [$matches, []];
@@ -596,6 +596,21 @@ class Templater implements TemplaterInterface
                     $element->attr(static::ATTR_SELECTED, static::ATTR_SELECTED);
                 } else {
                     $element->removeAttr(static::ATTR_SELECTED);
+                }
+            }
+
+            if ($attrs = $this->isInsertable([static::ATTR_HREF, static::ATTR_DATA_HREF], $matches)[1]) {
+                foreach ($attrs as $attr) {
+                    $attrValue = urldecode($element->attr($attr) ?? '');
+                    if ($attrValue) {
+                        if (strpos($attrValue, "{{$key}}") !== false) {
+                            $element->attr($attr, str_replace("{{$key}}", $value, $attrValue));
+                        }
+
+                        continue;
+                    }
+
+                    $element->attr($attr, $value);
                 }
             }
 
