@@ -336,7 +336,7 @@ class Templater implements TemplaterInterface
                 'trim',
                 explode(',', $element->attr($this->includesTypesAttribute) ?? '')
             ));
-            $includeType = $includeTypes[0] ?: $this->defaultIncludeType;
+            $includeType = ($includeTypes[0] ?? '') ?: $this->defaultIncludeType;
             foreach ($paths as $index => $path) {
                 $tplPath = static::getTplPath($path, $this->userRole);
 
@@ -670,6 +670,11 @@ class Templater implements TemplaterInterface
 
             if (\is_array($value)) {
                 $this->setMultiData($value, $parent->find(".$key{$this->subparentSelector}"));
+                continue;
+            }
+
+            if (null === $value && ($subparent = $parent->find(".$key{$this->subparentSelector}"))->count()) {
+                $this->dataDependsCheck($value, $subparent);
                 continue;
             }
 
