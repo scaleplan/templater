@@ -109,7 +109,7 @@ class Templater implements TemplaterInterface
     /**
      * @var bool
      */
-    protected $renderByMustache = true;
+    protected $renderByMustache = false;
 
     /**
      * @var string
