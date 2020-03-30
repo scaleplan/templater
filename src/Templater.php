@@ -515,14 +515,16 @@ class Templater implements TemplaterInterface
                 return;
             }
 
+            $prevElement = $element;
             foreach ($data as $row) {
                 if (!\is_array($row)) {
                     continue;
                 }
 
-                $clone = $this->setData($row, $element->clone());
-                $element->after($clone);
-                $element = $clone;
+
+                $newElement = $this->setData($row, $element->clone());
+                $prevElement->after($newElement);
+                $prevElement = $newElement;
             }
         });
     }
