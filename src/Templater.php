@@ -117,7 +117,7 @@ class Templater implements TemplaterInterface
     protected $dataInAttribute = 'data-in';
 
     /**
-     * @var string
+     * @var string|null
      */
     protected $userRole;
 
@@ -154,9 +154,9 @@ class Templater implements TemplaterInterface
     }
 
     /**
-     * @param string $userRole
+     * @param string|null $userRole
      */
-    public function setUserRole(string $userRole) : void
+    public function setUserRole(?string $userRole) : void
     {
         $this->userRole = $userRole;
     }
