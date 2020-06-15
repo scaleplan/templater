@@ -9,7 +9,7 @@ namespace Scaleplan\Templater\Exceptions;
  */
 class DomElementNotFountException extends TemplaterException
 {
-    public const MESSAGE = 'DOM element ":selector" not found.';
+    public const MESSAGE = 'Элемент DOM по селектору ":selector" не найден.';
     public const CODE = 404;
 
     /**

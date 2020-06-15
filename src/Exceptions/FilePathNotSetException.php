@@ -9,6 +9,6 @@ namespace Scaleplan\Templater\Exceptions;
  */
 class FilePathNotSetException extends TemplaterException
 {
-    public const MESSAGE = 'Template path not set.';
+    public const MESSAGE = 'Невозможно установить путь к шаблону.';
     public const CODE = 404;
 }

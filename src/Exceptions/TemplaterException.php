@@ -9,7 +9,7 @@ namespace Scaleplan\Templater\Exceptions;
  */
 class TemplaterException extends \Exception
 {
-    public const MESSAGE = 'Templater error.';
+    public const MESSAGE = 'Ошибка шаблонизатора.';
     public const CODE = 500;
 
     /**

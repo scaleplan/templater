@@ -9,7 +9,7 @@ namespace Scaleplan\Templater\Exceptions;
  */
 class FileNotFountException extends TemplaterException
 {
-    public const MESSAGE = 'Template file ":file_path" not found.';
+    public const MESSAGE = 'Файл шаблона ":file_path" не найден.';
     public const CODE = 404;
 
     /**
