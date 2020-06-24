@@ -3,7 +3,6 @@
 namespace Scaleplan\Templater;
 
 use PhpQuery\PhpQueryObject;
-use Scaleplan\Templater\Exceptions\DomElementNotFountException;
 
 /**
  * Шаблонизатор
@@ -45,8 +44,6 @@ interface TemplaterInterface
      * @param string|PhpQueryObject $parent
      *
      * @return PhpQueryObject
-     *
-     * @throws DomElementNotFountException
      */
     public function setMultiData(array $data, $parent) : PhpQueryObject;
 
@@ -57,8 +54,6 @@ interface TemplaterInterface
      * @param string|PhpQueryObject $parent
      *
      * @return PhpQueryObject
-     *
-     * @throws DomElementNotFountException
      */
     public function setData(array $data, $parent) : PhpQueryObject;
 }

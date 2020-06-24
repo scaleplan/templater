@@ -5,18 +5,19 @@ namespace Scaleplan\Templater\Exceptions;
 use function Scaleplan\Translator\translate;
 
 /**
- * Class TemplaterException
+ * Class DomElementNotFoundException
  *
  * @package Scaleplan\Templater\Exceptions
  */
-class TemplaterException extends \Exception
+class DomElementNotFoundException extends TemplaterException
 {
-    public const MESSAGE = 'Ошибка шаблонизатора.';
-    public const CODE = 500;
+    public const MESSAGE = 'templater.element-not-found';
+    public const CODE = 404;
 
     /**
-     * TemplaterException constructor.
+     * DomElementNotFoundException constructor.
      *
+     * @param string|null $selector
      * @param string $message
      * @param int $code
      * @param \Throwable|null $previous
@@ -27,10 +28,10 @@ class TemplaterException extends \Exception
      * @throws \Scaleplan\DependencyInjection\Exceptions\ParameterMustBeInterfaceNameOrClassNameException
      * @throws \Scaleplan\DependencyInjection\Exceptions\ReturnTypeMustImplementsInterfaceException
      */
-    public function __construct(string $message = '', int $code = 0, \Throwable $previous = null)
+    public function __construct(string $selector = null, string $message = '', int $code = 0, \Throwable $previous = null)
     {
         parent::__construct(
-            $message ?: translate(static::MESSAGE) ?: static::MESSAGE,
+            translate($message ?: static::MESSAGE, ['selector' => $selector,]),
             $code ?: static::CODE,
             $previous
         );

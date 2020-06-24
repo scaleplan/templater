@@ -5,8 +5,8 @@ namespace Scaleplan\Templater;
 
 use PhpQuery\PhpQuery;
 use PhpQuery\PhpQueryObject;
-use Scaleplan\Templater\Exceptions\DomElementNotFountException;
-use Scaleplan\Templater\Exceptions\FileNotFountException;
+use Scaleplan\Templater\Exceptions\DomElementNotFoundException;
+use Scaleplan\Templater\Exceptions\FileNotFoundException;
 use Scaleplan\Templater\Exceptions\FilePathNotSetException;
 use Scaleplan\Templater\Exceptions\TemplaterException;
 use function Scaleplan\Helpers\get_required_env;
@@ -183,7 +183,12 @@ class Templater implements TemplaterInterface
      *
      * @return string
      *
-     * @throws TemplaterException
+     * @throws FileNotFoundException
+     * @throws \ReflectionException
+     * @throws \Scaleplan\DependencyInjection\Exceptions\ContainerTypeNotSupportingException
+     * @throws \Scaleplan\DependencyInjection\Exceptions\DependencyInjectionException
+     * @throws \Scaleplan\DependencyInjection\Exceptions\ParameterMustBeInterfaceNameOrClassNameException
+     * @throws \Scaleplan\DependencyInjection\Exceptions\ReturnTypeMustImplementsInterfaceException
      * @throws \Scaleplan\Helpers\Exceptions\EnvNotFoundException
      */
     public static function getTplPath(string $path, string $userRole = null) : string
@@ -221,7 +226,7 @@ class Templater implements TemplaterInterface
         }
 
         if (!file_exists($tplPath)) {
-            throw new TemplaterException("Файл шаблона '$tplPath' не существует.");
+            throw new FileNotFoundException($tplPath);
         }
 
         return $tplPath;
@@ -232,7 +237,7 @@ class Templater implements TemplaterInterface
      *
      * @return array
      *
-     * @throws DomElementNotFountException
+     * @throws DomElementNotFoundException
      * @throws \PhpQuery\Exceptions\PhpQueryException
      * @throws \Exception
      */
@@ -243,7 +248,7 @@ class Templater implements TemplaterInterface
         }
 
         if (!$selectorOrElement->count()) {
-            throw new DomElementNotFountException();
+            throw new DomElementNotFoundException();
         }
 
         return [
@@ -258,7 +263,7 @@ class Templater implements TemplaterInterface
      *
      * @param array $includesTypes
      *
-     * @throws DomElementNotFountException
+     * @throws DomElementNotFoundException
      * @throws \PhpQuery\Exceptions\PhpQueryException
      * @throws \Exception
      */
@@ -269,7 +274,7 @@ class Templater implements TemplaterInterface
         }
 
         if (!$selectorOrElement->count()) {
-            throw new DomElementNotFountException();
+            throw new DomElementNotFoundException();
         }
 
         $selectorOrElement->attr($this->includesAttribute, implode(',', $includes));
@@ -282,7 +287,7 @@ class Templater implements TemplaterInterface
      *
      * @param array $includesTypes
      *
-     * @throws DomElementNotFountException
+     * @throws DomElementNotFoundException
      * @throws \PhpQuery\Exceptions\PhpQueryException
      */
     public function addIncludes($selectorOrElement, array $includes, array $includesTypes) : void
@@ -299,7 +304,7 @@ class Templater implements TemplaterInterface
      * @param $selectorOrElement
      * @param array $toRemove
      *
-     * @throws DomElementNotFountException
+     * @throws DomElementNotFoundException
      * @throws \PhpQuery\Exceptions\PhpQueryException
      */
     public function removeIncludes($selectorOrElement, array $toRemove) : void
@@ -398,7 +403,7 @@ class Templater implements TemplaterInterface
             }
 
             if (!file_exists($this->templatePath)) {
-                throw new FileNotFountException($this->templatePath);
+                throw new FileNotFoundException($this->templatePath);
             }
 
             $this->template = PhpQuery::newDocumentFileHTML($this->templatePath);
@@ -427,7 +432,7 @@ class Templater implements TemplaterInterface
     {
         try {
             return $this->setMultiData($data, $parent);
-        } catch (DomElementNotFountException $e) {
+        } catch (DomElementNotFoundException $e) {
             return null;
         }
     }
@@ -440,14 +445,14 @@ class Templater implements TemplaterInterface
      *
      * @return PhpQueryObject
      *
-     * @throws DomElementNotFountException
+     * @throws DomElementNotFoundException
      * @throws \PhpQuery\Exceptions\PhpQueryException
      * @throws \Exception
      */
     public function setMultiData(array $data, $parent) : PhpQueryObject
     {
         if (\is_string($parent) && ($selector = $parent) && !($parent = $this->getTemplate()->find($parent))->count()) {
-            throw new DomElementNotFountException($selector);
+            throw new DomElementNotFoundException($selector);
         }
 
         if (!$parent->count()) {
@@ -641,14 +646,14 @@ class Templater implements TemplaterInterface
      *
      * @return PhpQueryObject
      *
-     * @throws DomElementNotFountException
+     * @throws DomElementNotFoundException
      * @throws \PhpQuery\Exceptions\PhpQueryException
      * @throws \Exception
      */
     public function setData(array $data, $parent, bool $generateMustache = false) : PhpQueryObject
     {
         if (\is_string($parent) && ($selector = $parent) && !($parent = $this->getTemplate()->find($parent))->count()) {
-            throw new DomElementNotFountException($selector);
+            throw new DomElementNotFoundException($selector);
         }
 
         $parent->removeClass($this->cloneClassName);

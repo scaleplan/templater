@@ -5,18 +5,19 @@ namespace Scaleplan\Templater\Exceptions;
 use function Scaleplan\Translator\translate;
 
 /**
- * Class TemplaterException
+ * Class FileNotFoundException
  *
  * @package Scaleplan\Templater\Exceptions
  */
-class TemplaterException extends \Exception
+class FileNotFoundException extends TemplaterException
 {
-    public const MESSAGE = 'Ошибка шаблонизатора.';
-    public const CODE = 500;
+    public const MESSAGE = 'templater.tpl-file-not-found';
+    public const CODE = 404;
 
     /**
-     * TemplaterException constructor.
+     * FileNotFoundException constructor.
      *
+     * @param string $filePath
      * @param string $message
      * @param int $code
      * @param \Throwable|null $previous
@@ -27,11 +28,11 @@ class TemplaterException extends \Exception
      * @throws \Scaleplan\DependencyInjection\Exceptions\ParameterMustBeInterfaceNameOrClassNameException
      * @throws \Scaleplan\DependencyInjection\Exceptions\ReturnTypeMustImplementsInterfaceException
      */
-    public function __construct(string $message = '', int $code = 0, \Throwable $previous = null)
+    public function __construct(string $filePath, string $message = '', int $code = 0, \Throwable $previous = null)
     {
         parent::__construct(
-            $message ?: translate(static::MESSAGE) ?: static::MESSAGE,
-            $code ?: static::CODE,
+            translate($message ?: static::MESSAGE, ['file_path' => $filePath,]),
+            static::CODE ?: $code,
             $previous
         );
     }
