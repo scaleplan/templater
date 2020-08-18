@@ -8,7 +8,7 @@ use PhpQuery\PhpQueryObject;
 use Scaleplan\Templater\Exceptions\DomElementNotFoundException;
 use Scaleplan\Templater\Exceptions\FileNotFoundException;
 use Scaleplan\Templater\Exceptions\FilePathNotSetException;
-use Scaleplan\Templater\Exceptions\TemplaterException;
+use Scaleplan\Translator\Translator;
 use function Scaleplan\Helpers\get_required_env;
 
 /**
@@ -195,8 +195,10 @@ class Templater implements TemplaterInterface
     {
         static $privateViewsPath, $publicViewsPath;
         if (!$privateViewsPath) {
-            $locale = \Locale::acceptFromHttp(($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''))
-                ?: get_required_env('DEFAULT_LANG');
+            $locale = Translator::getRealLocale(
+                \Locale::acceptFromHttp(($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')),
+                get_required_env('BUNDLE_PATH') . get_required_env('TRANSLATES_PATH')
+            ) ?: get_required_env('DEFAULT_LANG');
             $privateViewsPath = get_required_env('BUNDLE_PATH')
                 . get_required_env('VIEWS_PATH')
                 . get_required_env('PRIVATE_TEMPLATES_PATH')
