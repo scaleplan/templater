@@ -195,10 +195,13 @@ class Templater implements TemplaterInterface
     {
         static $privateViewsPath, $publicViewsPath;
         if (!$privateViewsPath) {
-            $locale = Translator::getRealLocale(
-                \Locale::acceptFromHttp(($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')),
-                get_required_env('BUNDLE_PATH') . get_required_env('TRANSLATES_PATH')
-            ) ?: get_required_env('DEFAULT_LANG');
+            $locale = !empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])
+                ? Translator::getRealLocale(
+                    \Locale::acceptFromHttp($_SERVER['HTTP_ACCEPT_LANGUAGE']),
+                    get_required_env('BUNDLE_PATH') . get_required_env('TRANSLATES_PATH')
+                )
+                : get_required_env('DEFAULT_LANG');
+            
             $privateViewsPath = get_required_env('BUNDLE_PATH')
                 . get_required_env('VIEWS_PATH')
                 . get_required_env('PRIVATE_TEMPLATES_PATH')
